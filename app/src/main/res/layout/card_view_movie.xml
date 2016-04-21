@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    card_view:cardElevation="4sp"
+    card_view:cardUseCompatPadding="true">
+
+    <android.support.v7.widget.LinearLayoutCompat
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <me.sethallen.popularmovies.View.WrapContentDraweeView
+            android:id="@+id/card_view_movie_poster"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            fresco:fadeDuration="300"
+            fresco:actualImageScaleType="fitCenter"
+            fresco:placeholderImage="@color/placeholder_image_color"
+            fresco:placeholderImageScaleType="fitCenter"
+            fresco:failureImage="@color/failure_image_color"
+            fresco:failureImageScaleType="centerInside"
+            fresco:retryImage="@color/retrying_image_color"
+            fresco:retryImageScaleType="centerCrop"
+            fresco:progressBarImage="@color/progress_bar_color"
+            fresco:progressBarImageScaleType="centerInside"
+            fresco:progressBarAutoRotateInterval="1000"
+            fresco:pressedStateOverlayImage="@color/pressed_state_overlay_color"
+            />
+
+    </android.support.v7.widget.LinearLayoutCompat>
+
+</android.support.v7.widget.CardView>

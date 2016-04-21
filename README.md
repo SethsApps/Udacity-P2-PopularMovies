@@ -18,7 +18,7 @@ In order for this app to fetch content using the themoviedb.org API, an API key 
 ## TODO
 
 ##### User Interface - Layout
-- Movies are displayed in the main layout via a grid of their corresponding movie poster thumbnails
+- ~~Movies are displayed in the main layout via a grid of their corresponding movie poster thumbnails~~ ([6e61f4ce4acc5458ef3dacf32e468eac43e5071a](https://git.io/vw8fy))
 - UI contains an element (i.e a spinner or settings menu) to toggle the sort order of the movies by: most popular, highest rated
 - UI contains a screen for displaying the details for a selected movie
 - Movie details layout contains title, release date, movie poster, vote average, and plot synopsis.
@@ -28,7 +28,7 @@ In order for this app to fetch content using the themoviedb.org API, an API key 
 - When a movie poster thumbnail is selected, the movie details screen is launched
 
 ##### Network API Implementation 
-- In a background thread, app queries the /movie/popular or /movie/top_rated API for the sort criteria specified in the settings menu.
+- ~~In a background thread, app queries the /movie/popular or /movie/top_rated API for the sort criteria specified in the settings menu.~~ ([6e61f4ce4acc5458ef3dacf32e468eac43e5071a](https://git.io/vw8fy))
 - This query can also be used to fetch the related metadata needed for the detail view.
 
 ## Consider using

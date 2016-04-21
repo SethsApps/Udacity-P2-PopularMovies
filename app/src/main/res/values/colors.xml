@@ -3,4 +3,9 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="placeholder_image_color">#666666</color>
+    <color name="failure_image_color">#FF0000</color>
+    <color name="retrying_image_color">#00FF00</color>
+    <color name="progress_bar_color">#0000FF</color>
+    <color name="pressed_state_overlay_color">#222222</color>
 </resources>

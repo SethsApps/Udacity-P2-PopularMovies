@@ -41,12 +41,13 @@ import retrofit2.Response;
 public class MainActivityFragment extends Fragment {
 
     private static String LOG_TAG = MainActivityFragment.class.getSimpleName();
-
-    private static final String ARG_COLUMN_COUNT = "column-count";
+    private static final String ARG_COLUMN_COUNT            = "column-count";
+    private static String TMDB_MOVIE_POPULAR_QUERY_TYPE     = "popular";
+    private static String TMDB_MOVIE_TOP_RATED_QUERY_TYPE   = "top_rated";
 
     private int                     mColumnCount = 3;
     private int                     mPage        = 0;
-    private String                  mSortBy      = "popularity.desc";
+    private String mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
     private OnMovieSelectedListener mListener;
     private MovieAdapter            mMovieAdapter;
 
@@ -89,11 +90,11 @@ public class MainActivityFragment extends Fragment {
         switch (item.getItemId()) {
             case R.id.action_sort:
                 mPage = 0;
-                if (mSortBy.equals("popularity.desc")){
-                    mSortBy = "popularity.asc";
+                if (mQueryType.equals(TMDB_MOVIE_POPULAR_QUERY_TYPE)){
+                    mQueryType = TMDB_MOVIE_TOP_RATED_QUERY_TYPE;
                 }
                 else {
-                    mSortBy = "popularity.desc";
+                    mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
                 }
                 loadMovies();
                 return true;
@@ -162,7 +163,7 @@ public class MainActivityFragment extends Fragment {
         do {
             try {
                 MovieLoaderTask movieLoaderTask = new MovieLoaderTask();
-                MovieLoaderArgs args = new MovieLoaderArgs(mSortBy, mPage);
+                MovieLoaderArgs args            = new MovieLoaderArgs(mQueryType, mPage);
                 movieLoaderTask.execute(args);
                 break;
             }
@@ -175,20 +176,20 @@ public class MainActivityFragment extends Fragment {
 
     private class MovieLoaderArgs
     {
-        private String mSortBy;
+        private String mQueryType;
         private String mPage;
 
-        public String getSortBy() {
-            return mSortBy;
+        public String getQueryType() {
+            return mQueryType;
         }
 
         public String getPage() {
             return mPage;
         }
 
-        public MovieLoaderArgs(String sortBy, Integer page) {
-            this.mSortBy = sortBy;
-            this.mPage   = String.valueOf(page);
+        public MovieLoaderArgs(String queryType, Integer page) {
+            this.mQueryType = queryType;
+            this.mPage      = String.valueOf(page);
         }
     }
 
@@ -208,11 +209,13 @@ public class MainActivityFragment extends Fragment {
             final TheMovieDBService movieApi = TheMovieDBService.Factory.create(getString(R.string.base_url_tmdb));
 
             Log.d(LOG_TAG, "attempting to call getMovies with key " + apiKey
-                    + " and SortBy " + args.getSortBy()
+                    + " and QueryType " + args.getQueryType()
                     + " for Page " + args.getPage());
 
-            MovieResponse movieResponse
-                    = executeCall(movieApi.getMovies(apiKey, args.getSortBy(), args.getPage()));
+//            MovieResponse movieResponse
+//                    = executeCall(movieApi.getMovies(apiKey, args.getSortBy(), args.getPage()));
+
+            MovieResponse movieResponse = executeCall(movieApi.getMovies(args.getQueryType(), apiKey, args.getPage()));
 
             if (movieResponse == null) {
                 Log.d(LOG_TAG, "response from getMovies() call is null");

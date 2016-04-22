@@ -9,6 +9,9 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
@@ -42,7 +45,8 @@ public class MainActivityFragment extends Fragment {
     private static final String ARG_COLUMN_COUNT = "column-count";
 
     private int                     mColumnCount = 3;
-    private int                     mPage = 0;
+    private int                     mPage        = 0;
+    private String                  mSortBy      = "popularity.desc";
     private OnMovieSelectedListener mListener;
     private MovieAdapter            mMovieAdapter;
 
@@ -68,9 +72,36 @@ public class MainActivityFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
         if (getArguments() != null) {
             mColumnCount = getArguments().getInt(ARG_COLUMN_COUNT);
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_main_fragment, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_sort:
+                mPage = 0;
+                if (mSortBy.equals("popularity.desc")){
+                    mSortBy = "popularity.asc";
+                }
+                else {
+                    mSortBy = "popularity.desc";
+                }
+                loadMovies();
+                return true;
+            default:
+                break;
+        }
+
+        return false;
     }
 
     @Override
@@ -131,7 +162,7 @@ public class MainActivityFragment extends Fragment {
         do {
             try {
                 MovieLoaderTask movieLoaderTask = new MovieLoaderTask();
-                MovieLoaderArgs args = new MovieLoaderArgs("popularity.desc", mPage);
+                MovieLoaderArgs args = new MovieLoaderArgs(mSortBy, mPage);
                 movieLoaderTask.execute(args);
                 break;
             }
@@ -175,6 +206,10 @@ public class MainActivityFragment extends Fragment {
             String apiKey        = getString(R.string.api_key_tmdb);
 
             final TheMovieDBService movieApi = TheMovieDBService.Factory.create(getString(R.string.base_url_tmdb));
+
+            Log.d(LOG_TAG, "attempting to call getMovies with key " + apiKey
+                    + " and SortBy " + args.getSortBy()
+                    + " for Page " + args.getPage());
 
             MovieResponse movieResponse
                     = executeCall(movieApi.getMovies(apiKey, args.getSortBy(), args.getPage()));
@@ -225,6 +260,9 @@ public class MainActivityFragment extends Fragment {
             super.onPostExecute(movies);
 
             if (movies != null) {
+                if (mPage == 1) {
+                    mMovieAdapter.clear();
+                }
                 mMovieAdapter.appendItems(movies);
             } else {
                 String errorInfo = "No Success: ";// + response.errorBody().toString();

@@ -22,18 +22,13 @@ public interface TheMovieDBService {
     @GET("configuration")
     Call<Configuration> getConfiguration(@Query("api_key") String apiKey);
 
-    @GET("discover/movie")
-    Call<MovieResponse> discoverMovies(@Query("api_key") String apiKey,
-                                       @Query("sort_by") String sortBy,
-                                       @Query("page")    String page);
+    @GET("movie/{movieEndpoint}")
+    Call<MovieResponse> getMovies(@Path("movieEndpoint") String movieEndpoint,
+                                  @Query("api_key")      String apiKey,
+                                  @Query("page")         String page);
 
-    @GET("movie/{queryType}")
-    Call<MovieResponse> getMovies(@Path("queryType") String queryType,
-                                  @Query("api_key")  String apiKey,
-                                  @Query("page")     String page);
-
-    @GET("discover/movie/{imdbid}/images")
-    Call<Images> getImages(@Path("imdbid") String imdbid,
+    @GET("discover/movie/{imdbID}/images")
+    Call<Images> getImages(@Path("imdbID")   String imdbID,
                            @Query("api_key") String apiKey);
 
     class Factory {

@@ -1,17 +1,21 @@
 package me.sethallen.popularmovies;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import me.sethallen.popularmovies.Activity.MovieDetailActivity;
 import me.sethallen.popularmovies.Fragment.MainActivityFragment;
 import me.sethallen.popularmovies.Model.Movie;
 
 public class MainActivity
         extends AppCompatActivity
         implements MainActivityFragment.OnMovieSelectedListener {
+
+    public final static String MOVIE_ARG = "me.sethallen.popularmovies.MOVIE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +45,8 @@ public class MainActivity
 
     @Override
     public void onMovieSelected(Movie movie) {
-        // TODO: Launch new intent to show details of the selected movie
+        Intent intent = new Intent(this, MovieDetailActivity.class);
+        intent.putExtra(MOVIE_ARG, movie);
+        startActivity(intent);
     }
 }

@@ -1,11 +1,16 @@
 package me.sethallen.popularmovies.Model;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -29,7 +34,8 @@ public class Movie implements Parcelable {
     private float vote_average;
     private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-    private String posterUrl;
+    private Uri posterUri;
+    private Uri backdropUri;
 
     /**
      * No args constructor for use in serialization
@@ -332,22 +338,50 @@ public class Movie implements Parcelable {
 //        this.additionalProperties.put(name, value);
 //    }
 
-    /**
-     *
-     * @return
-     * The poster_path
-     */
-    public String getPosterUrl() {
-        return posterUrl;
+    public Date getReleaseDateAsDate()
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        try {
+            return sdf.parse(getReleaseDate());
+        } catch (ParseException pe) {
+            return null;
+        }
     }
 
     /**
      *
-     * @param posterUrl
-     * The poster full url
+     * @return
+     * The poster full uri
      */
-    public void setPosterUrl(String posterUrl) {
-        this.posterUrl = posterUrl;
+    public Uri getPosterUri() {
+        return posterUri;
+    }
+
+    /**
+     *
+     * @param posterUri
+     * The poster full uri
+     */
+    public void setPosterUri(Uri posterUri) {
+        this.posterUri = posterUri;
+    }
+
+    /**
+     *
+     * @return
+     * The backdrop full uri
+     */
+    public Uri getBackdropUri() {
+        return backdropUri;
+    }
+
+    /**
+     *
+     * @param backdropUri
+     * The backdrop full uri
+     */
+    public void setBackdropUri(Uri backdropUri) {
+        this.backdropUri = backdropUri;
     }
 
     @Override
@@ -372,7 +406,8 @@ public class Movie implements Parcelable {
         dest.writeByte(video ? (byte) 1 : (byte) 0);
         dest.writeFloat(this.vote_average);
         //dest.writeParcelable(this.additionalProperties, flags);
-        dest.writeString(this.posterUrl);
+        dest.writeString(this.posterUri.toString());
+        dest.writeString(this.backdropUri.toString());
     }
 
     protected Movie(Parcel in) {
@@ -392,7 +427,8 @@ public class Movie implements Parcelable {
         this.video = in.readByte() != 0;
         this.vote_average = in.readFloat();
         //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
-        this.posterUrl = in.readString();
+        this.posterUri = Uri.parse(in.readString());
+        this.backdropUri = Uri.parse(in.readString());
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {

@@ -11,25 +11,29 @@ In order for this app to fetch content using the themoviedb.org API, an API key 
 
 ## Required Tasks for Project 1 Nanodegree
 
-- Build a UI layout for multiple Activities.
-- Launch these Activities via Intent.
-- Fetch data from themovieDB API ([9df3202](https://git.io/vwBz5))
+- ~~Build a UI layout for multiple Activities.~~ ([a00a495](https://git.io/vwoww))
+- ~~Launch these Activities via Intent.~~ ([a00a495](https://git.io/vwoww))
+- ~~Fetch data from themovieDB API~~ ([9df3202](https://git.io/vwBz5))
 
-## TODO
+## Requirements from Udacity Rubric
 
 ##### User Interface - Layout
 - ~~Movies are displayed in the main layout via a grid of their corresponding movie poster thumbnails~~ ([6e61f4c](https://git.io/vw8fy))
 - ~~UI contains an element (i.e a spinner or settings menu) to toggle the sort order of the movies by: most popular, highest rated~~ ([9df3202](https://git.io/vwBz5))
-- UI contains a screen for displaying the details for a selected movie
-- Movie details layout contains title, release date, movie poster, vote average, and plot synopsis.
+- ~~UI contains a screen for displaying the details for a selected movie~~ ([a00a495](https://git.io/vwoww))
+- ~~Movie details layout contains title, release date, movie poster, vote average, and plot synopsis.~~ ([a00a495](https://git.io/vwoww))
 
 ##### User Interface - Function
 - ~~When a user changes the sort criteria (“most popular and highest rated”) the main view gets updated correctly.~~ ([9df3202](https://git.io/vwBz5))
-- When a movie poster thumbnail is selected, the movie details screen is launched
+- ~~When a movie poster thumbnail is selected, the movie details screen is launched~~ ([a00a495](https://git.io/vwoww))
 
 ##### Network API Implementation 
 - ~~In a background thread, app queries the /movie/popular or /movie/top_rated API for the sort criteria specified in the settings menu.~~ ([9df3202](https://git.io/vwBz5))
-- This query can also be used to fetch the related metadata needed for the detail view.
+- ~~This query can also be used to fetch the related metadata needed for the detail view.~~ ([a00a495](https://git.io/vwoww))
+
+## Additional Features
+
+- Endless Scrolling on list of movies in main layout.
 
 ## Consider using
   - [Fresco](http://frescolib.org/) for image loading

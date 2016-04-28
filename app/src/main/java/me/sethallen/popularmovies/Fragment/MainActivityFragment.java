@@ -1,6 +1,7 @@
 package me.sethallen.popularmovies.Fragment;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -17,8 +18,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 
 import me.sethallen.popularmovies.Adapter.MovieAdapter;
@@ -235,22 +234,32 @@ public class MainActivityFragment extends Fragment {
                 return null;
             }
 
-            // Set the PosterUrl for each movie
-            String baseUrl    = configResponse.getImages().getBaseUrl();
-            String posterSize = configResponse.getImages().getPosterSizes().get(0);
-            for (Movie movie : movieResultList) {
-                try {
-                    movie.setPosterUrl(new URL(
-                            baseUrl
-                            + posterSize + "/"
-                            + movie.getPosterPath()
-                            + "?api_key=" + apiKey).toString());
-                } catch (MalformedURLException malformedURLEx) {
-                    Log.e(LOG_TAG, "MalformedURLException attempting to create movie poster path", malformedURLEx);
-                }
-            }
+            setURIs(configResponse, movieResultList, apiKey);
 
             return movieResultList;
+        }
+
+        private void setURIs(Configuration configuration, List<Movie> movieList, String apiKey)
+        {
+            // Set the PosterUrl for each movie
+            //String baseUrl      = configuration.getImages().getBaseUrl();
+            Uri    baseUri      = Uri.parse(configuration.getImages().getBaseUrl());
+            String posterSize   = configuration.getImages().getPosterSizes().get(0);
+            String backdropSize = configuration.getImages().getBackdropSizes().get(0);
+            for (Movie movie : movieList) {
+                movie.setPosterUri(getUri(baseUri, posterSize, movie.getPosterPath(), apiKey));
+                movie.setBackdropUri(getUri(baseUri, backdropSize, movie.getBackdropPath(), apiKey));
+            }
+        }
+
+        private Uri getUri(Uri baseUri, String size, String uniquePath, String apiKey)
+        {
+            Uri newURi = baseUri.buildUpon()
+                    .appendEncodedPath(size + uniquePath)
+                    .build();
+
+            Log.d(LOG_TAG, "URI was: " + newURi.toString());
+            return newURi;
         }
 
         @Override

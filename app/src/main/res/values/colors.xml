@@ -8,4 +8,8 @@
     <color name="retrying_image_color">#00FF00</color>
     <color name="progress_bar_color">#0000FF</color>
     <color name="pressed_state_overlay_color">#222222</color>
+    <color name="movie_title_color">#000000</color>
+    <color name="movie_detail_color">#777777</color>
+    <color name="movie_overview_color">#555555</color>
+    <color name="splitter_bar_color">#DDDDDD</color>
 </resources>

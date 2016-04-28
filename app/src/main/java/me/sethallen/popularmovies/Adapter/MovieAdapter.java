@@ -1,7 +1,6 @@
 package me.sethallen.popularmovies.Adapter;
 
 import android.content.Context;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,7 +56,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         // Get the data model based on position
         Movie movie = this.mMovieList.get(position);
 
-        holder.PosterImageView.setImageURI(Uri.parse(movie.getPosterUrl()));
+        holder.PosterImageView.setImageURI(movie.getPosterUri());
         //holder.TitleTextView.setText(movie.getTitle());
     }
 
@@ -95,7 +94,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
             PosterImageView = (SimpleDraweeView)movieView.findViewById(R.id.card_view_movie_poster);
             //TitleTextView   = (TextView)movieView.findViewById(R.id.card_view_movie_title);
 
-            PosterImageView.setOnClickListener(this);
+            //PosterImageView.setOnClickListener(this);
             movieView.setOnClickListener(this);
         }
 

@@ -4,9 +4,6 @@ import android.app.Application;
 
 import com.facebook.drawee.backends.pipeline.Fresco;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class MyApplication extends Application {
     @Override
     public void onCreate()

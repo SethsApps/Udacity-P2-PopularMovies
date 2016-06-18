@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="me.sethallen.popularmovies.Activity.MovieDetailActivity"
-    tools:showIn="@layout/activity_movie_detail">
+    tools:context=".fragment.MovieDetailFragment"
+    tools:showIn="@layout/fragment_movie_detail">
     
     <android.support.v7.widget.GridLayout
         android:layout_width="wrap_content"

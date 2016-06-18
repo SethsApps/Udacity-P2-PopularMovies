@@ -1,7 +1,11 @@
 <resources>
     <string name="app_name">Popular Movies</string>
-    <string name="api_key_tmdb">{replace with your TMDb api key}</string>
+    <string name="api_key_tmdb">{Your_TMDb_API_Key}</string>
     <string name="base_url_tmdb">http://api.themoviedb.org/3/</string>
+    <string name="main_title_sort_type">%1$s Movies</string>
     <string name="action_sort_by">Sort By</string>
     <string name="action_settings">Settings</string>
+    <string name="sort_dialog_title">Sort by&#8230;</string>
+    <string name="movie_detail_release_date">Released: %1$s</string>
+    <string name="movie_detail_rating">Rating: %1$s/10</string>
 </resources>

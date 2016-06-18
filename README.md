@@ -7,7 +7,8 @@ Further information about the project can be found [here](https://docs.google.co
 
 ## API Key for TMDb Required
 
-In order for this app to fetch content using the themoviedb.org API, an API key is required.  You can add your own by... **TODO: Add detail about adding APIKey**
+In order for this app to fetch content using the themoviedb.org API, an API key is required.  You can add your own by replacing the {Your_TMDB_API_Key} in the following string in strings.xml entry:
+<string name="api_key_tmdb">{Your_TMDb_API_Key}</string>
 
 ## Required Tasks for Project 1 Nanodegree
 

@@ -1,13 +1,10 @@
-package me.sethallen.popularmovies.Model;
+package me.sethallen.popularmovies.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class Image implements Parcelable {
 
     @JsonProperty("aspect_ratio")

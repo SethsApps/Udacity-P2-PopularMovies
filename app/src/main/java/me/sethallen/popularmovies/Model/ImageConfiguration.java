@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.Model;
+package me.sethallen.popularmovies.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -8,9 +8,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class ImageConfiguration implements Parcelable {
 
     @JsonProperty("base_url")
@@ -203,4 +200,53 @@ public class ImageConfiguration implements Parcelable {
             return new ImageConfiguration[size];
         }
     };
+
+    public String getClosestPosterSize(int preferredSizeInPixels)
+    {
+        List<Integer> posterSizeNumericList  = getIntegerList(getPosterSizes());
+        Integer       closestPosterSize      = closestItemInList(preferredSizeInPixels, posterSizeNumericList);
+        return "w" + closestPosterSize.toString();
+    }
+
+    public String getClosestBackdropSize(int preferredSizeInPixels)
+    {
+        List<Integer> backdropSizeNumericList  = getIntegerList(getBackdropSizes());
+        Integer       closestBackdropSize      = closestItemInList(preferredSizeInPixels, backdropSizeNumericList);
+
+        // If the preferred size is more than 50% larger than the closest size,
+        // return the "original" image which is likely a better fit.
+        if (preferredSizeInPixels > (closestBackdropSize * 1.5)
+                && closestBackdropSize == backdropSizeNumericList.get(backdropSizeNumericList.size() - 1)) {
+            return "original";
+        } else {
+            return "w" + closestBackdropSize.toString();
+        }
+    }
+
+    private List<Integer> getIntegerList(List<String> oldList)
+    {
+        List<Integer> newList = new ArrayList<>(oldList.size());
+        for (String stringValue : oldList) {
+            if (!stringValue.equals("original")) {
+                newList.add(Integer.parseInt(stringValue.substring(1)));
+            }
+        }
+        return newList;
+    }
+
+    private int closestItemInList(Integer value, List<Integer> sorted) {
+        if(value < sorted.get(0)) {
+            return sorted.get(0);
+        }
+
+        int i = 1;
+        for( ; i < sorted.size() && value > sorted.get(i) ; i++);
+
+        if(i >= sorted.size()) {
+            return sorted.get(sorted.size() - 1);
+        }
+
+        return Math.abs(value - sorted.get(i)) < Math.abs(value - sorted.get(i-1)) ?
+                sorted.get(i) : sorted.get(i-1);
+    }
 }

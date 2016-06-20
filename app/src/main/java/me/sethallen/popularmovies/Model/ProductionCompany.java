@@ -1,11 +1,8 @@
-package me.sethallen.popularmovies.Model;
+package me.sethallen.popularmovies.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class ProductionCompany implements Parcelable
 {
     private String name;

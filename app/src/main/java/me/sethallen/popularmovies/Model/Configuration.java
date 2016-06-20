@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.Model;
+package me.sethallen.popularmovies.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class Configuration implements Parcelable {
 
     private ImageConfiguration images;

@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.View;
+package me.sethallen.popularmovies.view;
 
 import android.content.Context;
 import android.graphics.drawable.Animatable;

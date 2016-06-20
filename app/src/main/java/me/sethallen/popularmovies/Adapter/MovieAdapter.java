@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.Adapter;
+package me.sethallen.popularmovies.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -11,13 +11,10 @@ import com.facebook.drawee.view.SimpleDraweeView;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.sethallen.popularmovies.Fragment.MainActivityFragment;
-import me.sethallen.popularmovies.Model.Movie;
+import me.sethallen.popularmovies.fragment.MainActivityFragment;
+import me.sethallen.popularmovies.model.Movie;
 import me.sethallen.popularmovies.R;
 
-/**
- * Created by Allense on 4/21/2016.
- */
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> {
 
     private static String LOG_TAG = MovieAdapter.class.getSimpleName();
@@ -57,8 +54,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         Movie movie = this.mMovieList.get(position);
 
         holder.PosterImageView.setImageURI(movie.getPosterUri());
-        //holder.TitleTextView.setText(movie.getTitle());
     }
+
+    public ArrayList<Movie> getMovieList() { return this.mMovieList; }
 
     @Override
     public int getItemCount() {
@@ -92,9 +90,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
 
             ClickListener   = listener;
             PosterImageView = (SimpleDraweeView)movieView.findViewById(R.id.card_view_movie_poster);
-            //TitleTextView   = (TextView)movieView.findViewById(R.id.card_view_movie_title);
 
-            //PosterImageView.setOnClickListener(this);
             movieView.setOnClickListener(this);
         }
 
@@ -107,11 +103,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         public void onClick(View v) {
             ClickListener.onMovieSelected(getAdapterPosition());
         }
-
-//        @Override
-//        public String toString() {
-//            return super.toString() + " '" + TitleTextView.getText() + "'";
-//        }
 
         public interface IClickableViewHolder
         {

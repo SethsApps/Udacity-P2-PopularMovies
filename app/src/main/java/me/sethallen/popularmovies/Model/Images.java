@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.Model;
+package me.sethallen.popularmovies.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -6,15 +6,11 @@ import android.os.Parcelable;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by Allense on 4/21/2016.
- */
-
 public class Images implements Parcelable {
 
     private Integer id;
-    private List<Image> backdrops = new ArrayList<Image>();
-    private List<Image> posters = new ArrayList<Image>();
+    private List<Image> backdrops = new ArrayList<>();
+    private List<Image> posters   = new ArrayList<>();
 //    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
@@ -97,9 +93,9 @@ public class Images implements Parcelable {
 
     protected Images(Parcel in) {
         this.id = (Integer) in.readValue(Integer.class.getClassLoader());
-        this.backdrops = new ArrayList<Image>();
+        this.backdrops = new ArrayList<>();
         in.readList(this.backdrops, List.class.getClassLoader());
-        this.posters = new ArrayList<Image>();
+        this.posters = new ArrayList<>();
         in.readList(this.posters, List.class.getClassLoader());
         //this.posters = in.createT.createTypedArrayList(Poster.CREATOR);
         //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());

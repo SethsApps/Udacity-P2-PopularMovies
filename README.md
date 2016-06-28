@@ -24,7 +24,7 @@ In order for this app to fetch content using the themoviedb.org API, an API key 
 
 ##### User Interface - Layout
 - ~~Movies are displayed in the main layout via a grid of their corresponding movie poster thumbnails~~ ([6e61f4c](https://git.io/vw8fy))
-- ~~UI contains an element (i.e a spinner or settings menu) to toggle the sort order of the movies by: most popular, highest rated~~ ([9df3202](https://git.io/vwBz5), and favorites
+- ~~UI contains an element (i.e a spinner or settings menu) to toggle the sort order of the movies by: most popular, highest rated~~ ([9df3202](https://git.io/vwBz5)), and favorites
 - ~~UI contains a screen for displaying the details for a selected movie~~ ([a00a495](https://git.io/vwoww))
 - ~~Movie details layout contains title, release date, movie poster, vote average, and plot synopsis.~~ ([a00a495](https://git.io/vwoww))
 - Movie Details layout contains a section for displaying trailer videos and user reviews

@@ -27,6 +27,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".activity.MainActivity" />
         </activity>
+
+        <provider
+            android:name=".data.FavoriteMovieProvider"
+            android:authorities="me.sethallen.popularmovies" />
     </application>
 
 </manifest>

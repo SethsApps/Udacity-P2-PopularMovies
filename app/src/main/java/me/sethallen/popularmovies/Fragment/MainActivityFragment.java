@@ -2,6 +2,7 @@ package me.sethallen.popularmovies.fragment;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -23,12 +24,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.sethallen.popularmovies.R;
 import me.sethallen.popularmovies.activity.BaseActivity;
 import me.sethallen.popularmovies.adapter.MovieAdapter;
+import me.sethallen.popularmovies.data.FavoriteMovieContract.FavoriteMovieEntry;
+import me.sethallen.popularmovies.data.FavoriteMovieDbHelper;
 import me.sethallen.popularmovies.model.Configuration;
 import me.sethallen.popularmovies.model.Movie;
 import me.sethallen.popularmovies.model.MovieResponse;
-import me.sethallen.popularmovies.R;
 import me.sethallen.popularmovies.service.TheMovieDBService;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -49,7 +52,11 @@ public class MainActivityFragment extends Fragment {
     private static final String STATE_MOVIE_LIST                = "state-movie-list";
     private static String       TMDB_MOVIE_POPULAR_QUERY_TYPE   = "popular";
     private static String       TMDB_MOVIE_TOP_RATED_QUERY_TYPE = "top_rated";
-    private static String[]     mSortDialogItems                = new String[] {"Most Popular", "Highest Rated"};
+    private static String       TMDB_MOVIE_FAVORITE_QUERY_TYPE  = "favorite";
+    private static final int    SORT_OPTION_INDEX_MOST_POPULAR  = 0;
+    private static final int    SORT_OPTION_INDEX_HIGHEST_RATED = 1;
+    private static final int    SORT_OPTION_INDEX_FAVORITES     = 2;
+    private static String[]     mSortDialogItems;
 
     private int                     mPage;
     private String                  mQueryType;
@@ -59,8 +66,13 @@ public class MainActivityFragment extends Fragment {
     private RecyclerView            mMovieRecyclerView;
     private MovieAdapter            mMovieAdapter;
 
-    public MainActivityFragment() {
+    public MainActivityFragment()
+    {
         // Required empty public constructor
+        mSortDialogItems = new String[3];
+        mSortDialogItems[SORT_OPTION_INDEX_MOST_POPULAR]  = "Most Popular";
+        mSortDialogItems[SORT_OPTION_INDEX_HIGHEST_RATED] = "Highest Rated";
+        mSortDialogItems[SORT_OPTION_INDEX_FAVORITES]     = "Favorites";
     }
 
     /**
@@ -147,11 +159,22 @@ public class MainActivityFragment extends Fragment {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
 
         final int checkedItem;
-        if (mQueryType.equals(TMDB_MOVIE_POPULAR_QUERY_TYPE)){
-            checkedItem = 0;
+
+        if (mQueryType.equals(TMDB_MOVIE_POPULAR_QUERY_TYPE))
+        {
+            checkedItem = SORT_OPTION_INDEX_MOST_POPULAR;
         }
-        else {
-            checkedItem = 1;
+        else if (mQueryType.equals(TMDB_MOVIE_TOP_RATED_QUERY_TYPE))
+        {
+            checkedItem = SORT_OPTION_INDEX_HIGHEST_RATED;
+        }
+        else if (mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
+        {
+            checkedItem = SORT_OPTION_INDEX_FAVORITES;
+        }
+        else
+        {
+            checkedItem = SORT_OPTION_INDEX_MOST_POPULAR;
         }
 
         AlertDialog dialog;
@@ -169,13 +192,19 @@ public class MainActivityFragment extends Fragment {
                                     return;
                                 }
                                 mPage = 0;
-                                if (which == 0)
+                                switch (which)
                                 {
-                                    mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
-                                }
-                                else
-                                {
-                                    mQueryType = TMDB_MOVIE_TOP_RATED_QUERY_TYPE;
+                                    case SORT_OPTION_INDEX_MOST_POPULAR:
+                                        mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
+                                        break;
+                                    case SORT_OPTION_INDEX_HIGHEST_RATED:
+                                        mQueryType = TMDB_MOVIE_TOP_RATED_QUERY_TYPE;
+                                        break;
+                                    case SORT_OPTION_INDEX_FAVORITES:
+                                    default:
+                                        mQueryType = TMDB_MOVIE_FAVORITE_QUERY_TYPE;
+                                        break;
+
                                 }
                                 loadMovies();
 
@@ -235,11 +264,18 @@ public class MainActivityFragment extends Fragment {
     public void loadMovies() {
         mPage += 1;
 
+        if (mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
+        {
+            FavoriteMovieLoaderTask movieLoaderTask = new FavoriteMovieLoaderTask();
+            movieLoaderTask.execute();
+            return;
+        }
+
         int retryCount = 0;
         do {
             try {
-                MovieLoaderTask movieLoaderTask = new MovieLoaderTask();
-                MovieLoaderArgs args            = new MovieLoaderArgs(mQueryType, mPage);
+                TMDBMovieLoaderTask movieLoaderTask = new TMDBMovieLoaderTask();
+                MovieLoaderArgs args                = new MovieLoaderArgs(mQueryType, mPage);
 
                 movieLoaderTask.execute(args);
                 break;
@@ -270,12 +306,7 @@ public class MainActivityFragment extends Fragment {
         }
     }
 
-    private class MovieLoaderTask extends AsyncTask<MovieLoaderArgs, Void, List<Movie>> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
+    private class TMDBMovieLoaderTask extends AsyncTask<MovieLoaderArgs, Void, List<Movie>> {
 
         @Override
         protected List<Movie> doInBackground(MovieLoaderArgs... params) {
@@ -307,8 +338,57 @@ public class MainActivityFragment extends Fragment {
         }
 
         @Override
-        protected void onProgressUpdate(Void... values) {
-            super.onProgressUpdate(values);
+        protected void onPostExecute(List<Movie> movies) {
+            super.onPostExecute(movies);
+
+            appendMoviesToGrid(movies);
+        }
+    }
+
+    private class FavoriteMovieLoaderTask extends AsyncTask<Void, Void, List<Movie>> {
+
+        FavoriteMovieDbHelper _dbHelper;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            _dbHelper = new FavoriteMovieDbHelper(getContext());
+        }
+
+        @Override
+        protected List<Movie> doInBackground(Void... params) {
+
+            Cursor movieCursor = getActivity().getContentResolver().query(
+                    FavoriteMovieEntry.CONTENT_URI,
+                    FavoriteMovieEntry.COLUMNS,
+                    null,
+                    null,
+                    null);
+
+            List<Movie> favoriteMovieList = new ArrayList<>();
+
+            if (movieCursor.moveToFirst())
+            {
+                Movie movie;
+                do
+                {
+                    movie = new Movie(
+                        movieCursor.getInt(FavoriteMovieEntry.COLUMN_INDEX_MOVIE_ID),
+                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_TITLE),
+                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_OVERVIEW),
+                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_RELEASE_DATE),
+                        movieCursor.getFloat(FavoriteMovieEntry.COLUMN_INDEX_VOTE_AVERAGE),
+                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_BACKDROP_PATH),
+                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_POSTER_PATH)
+                    );
+                    movie.SetIsFavorite(true);
+                    favoriteMovieList.add(movie);
+                } while (movieCursor.moveToNext());
+            }
+
+            movieCursor.close();
+
+            return favoriteMovieList;
         }
 
         @Override

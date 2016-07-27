@@ -37,12 +37,33 @@ public class Movie implements Parcelable {
     private Uri    imageBaseUri;
     private String posterSize;
     private String backdropSize;
+    private boolean _isFavorite;
 
     /**
      * No args constructor for use in serialization
      *
      */
     public Movie() {
+    }
+
+    /**
+     *
+     * @param id
+     * @param title
+     * @param overview
+     * @param release_date
+     * @param vote_average
+     * @param backdrop_path
+     * @param poster_path
+     */
+    public Movie(int id, String title, String overview, String release_date, float vote_average, String backdrop_path, String poster_path) {
+        this.poster_path = poster_path;
+        this.overview = overview;
+        this.release_date = release_date;
+        this.id = id;
+        this.title = title;
+        this.backdrop_path = backdrop_path;
+        this.vote_average = vote_average;
     }
 
     /**
@@ -421,6 +442,16 @@ public class Movie implements Parcelable {
         return getUri(getImageBaseUri(), getBackdropSize(), getBackdropPath());
     }
 
+    public void SetIsFavorite(boolean isFavorite)
+    {
+        _isFavorite = isFavorite;
+    }
+
+    public boolean GetIsFavorite()
+    {
+        return _isFavorite;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -429,7 +460,7 @@ public class Movie implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(this.poster_path);
-        dest.writeByte(adult ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.adult ? (byte) 1 : (byte) 0);
         dest.writeString(this.overview);
         dest.writeString(this.release_date);
         dest.writeList(this.genreIds);
@@ -446,6 +477,7 @@ public class Movie implements Parcelable {
         dest.writeString(this.imageBaseUri.toString());
         dest.writeString(this.posterSize);
         dest.writeString(this.backdropSize);
+        dest.writeByte(this._isFavorite ? (byte) 1 : (byte) 0);
     }
 
     protected Movie(Parcel in) {
@@ -468,6 +500,7 @@ public class Movie implements Parcelable {
         this.imageBaseUri = Uri.parse(in.readString());
         this.posterSize = in.readString();
         this.backdropSize = in.readString();
+        this._isFavorite = in.readByte() != 0;
     }
 
     public static final Parcelable.Creator<Movie> CREATOR = new Parcelable.Creator<Movie>() {

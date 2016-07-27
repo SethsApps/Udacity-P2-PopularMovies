@@ -2,10 +2,14 @@ package me.sethallen.popularmovies.fragment;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.graphics.Palette;
@@ -25,16 +29,19 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-import me.sethallen.popularmovies.model.Movie;
 import me.sethallen.popularmovies.R;
+import me.sethallen.popularmovies.interfaces.IAsyncTaskResultHandler;
+import me.sethallen.popularmovies.model.Movie;
+import me.sethallen.popularmovies.tasks.ManageFavoriteMovieTask;
 import me.sethallen.popularmovies.view.WrapContentDraweeView;
 
-public class MovieDetailFragment extends Fragment {
+public class MovieDetailFragment extends Fragment implements IAsyncTaskResultHandler {
 
     private static       String LOG_TAG   = MovieDetailFragment.class.getSimpleName();
     private static final String ARG_MOVIE = "movie";
     private              Movie  mMovie;
-    private              AppBarLayout            mAppBarLayout;
+    private              CoordinatorLayout       _coordinatorLayout;
+    private              FloatingActionButton    _fabFavorite;
     private              CollapsingToolbarLayout mCollapsingToolbar;
     private              Toolbar                 mToolbar;
 
@@ -59,11 +66,13 @@ public class MovieDetailFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+                             Bundle savedInstanceState)
+    {
 
         View v = inflater.inflate(R.layout.fragment_movie_detail, container, false);
 
-        mAppBarLayout      = (AppBarLayout) v.findViewById(R.id.app_bar);
+        _coordinatorLayout = (CoordinatorLayout) v.findViewById(R.id.coordinator_layout);
+        _fabFavorite       = (FloatingActionButton) v.findViewById(R.id.fab_favorite);
         mCollapsingToolbar = (CollapsingToolbarLayout) v.findViewById(R.id.collapsing_toolbar);
         mToolbar           = (Toolbar) v.findViewById(R.id.toolbar);
 
@@ -71,12 +80,14 @@ public class MovieDetailFragment extends Fragment {
         activity.setSupportActionBar(mToolbar);
 
         ActionBar actionBar = activity.getSupportActionBar();
-        if (actionBar != null) {
+        if (actionBar != null)
+        {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setDisplayShowTitleEnabled(false);
         }
 
-        if (getArguments() == null) {
+        if (getArguments() == null)
+        {
             return v;
         }
 
@@ -86,15 +97,21 @@ public class MovieDetailFragment extends Fragment {
             return v;
         }
 
-        //        TODO: Finish implementing this "Favorite" button in P2 of PopularMovies
-//        FloatingActionButton fabFavorite = (FloatingActionButton) findViewById(R.id.fab_favorite);
-//        fabFavorite.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Save Favorite", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
+        final MovieDetailFragment thisClass = this;
+
+        setFavoriteButtonDrawable();
+
+        _fabFavorite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Snackbar.make(view, "Saving Favorite", Snackbar.LENGTH_LONG)
+                //        .setAction("Action", null).show();
+
+                ManageFavoriteMovieTask task
+                        = new ManageFavoriteMovieTask(getActivity(), thisClass);
+                task.execute(mMovie);
+            }
+        });
 
         Log.d(LOG_TAG, "Backdrop Uri: " + mMovie.getBackdropUri().toString());
 
@@ -212,6 +229,41 @@ public class MovieDetailFragment extends Fragment {
         //mListener = null;
     }
 
+    @Override
+    public void onSuccess(String result)
+    {
+        if (result.endsWith(ManageFavoriteMovieTask.RESULT_ADDED_MOVIE_TO_FAVORITES))
+        {
+            mMovie.SetIsFavorite(true);
+        }
+        else
+        {
+            mMovie.SetIsFavorite(false);
+        }
+
+        setFavoriteButtonDrawable();
+
+        Snackbar.make(_coordinatorLayout, mMovie.getTitle() + " " + result, Snackbar.LENGTH_LONG)
+                .show();
+
+
+//        if (operationType == ADDED_TO_FAVORITE) {
+//            fabFavorite.setImageDrawable(R.drawable.ic_favorite);
+//            //mSPManagerFavMovies.putBoolean(mMovie.getId(), true);
+//        } else {
+//            fabFavorite.setImageDrawable(R.drawable.ic_favorite_border);
+//            //mSPManagerFavMovies.putBoolean(mMovie.getId(), false);
+//        }
+
+        //NetworkUtils.showSnackbar(mCoordinatorLayout, mMovie.getTitle() + " " + result);
+    }
+
+    @Override
+    public void onFailure()
+    {
+        //NetworkUtils.showSnackbar(mCoordinatorLayout, mMovie.getTitle() + " " + somethingWentWrong);
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -228,4 +280,21 @@ public class MovieDetailFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
      */
+
+    private void setFavoriteButtonDrawable()
+    {
+        Drawable drawableFavorite;
+        if (mMovie.GetIsFavorite())
+        {
+            //drawableFavorite = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite, null);
+            drawableFavorite = ContextCompat.getDrawable(getActivity(), R.drawable.ic_favorite);
+        }
+        else
+        {
+            //drawableFavorite = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border, null);
+            drawableFavorite = ContextCompat.getDrawable(getActivity(), R.drawable.ic_favorite_border);
+        }
+
+        _fabFavorite.setImageDrawable(drawableFavorite);
+    }
 }

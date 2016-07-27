@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 import me.sethallen.popularmovies.model.Configuration;
 import me.sethallen.popularmovies.model.Images;
 import me.sethallen.popularmovies.model.MovieResponse;
+import me.sethallen.popularmovies.model.Videos;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -26,6 +27,10 @@ public interface TheMovieDBService {
 
     @GET("discover/movie/{imdbID}/images")
     Call<Images> getImages(@Path("imdbID")   String imdbID,
+                           @Query("api_key") String apiKey);
+
+    @GET("movie/{imdbID}/videos")
+    Call<Videos> getVideos(@Path("imdbID")   String imdbID,
                            @Query("api_key") String apiKey);
 
     class Factory {

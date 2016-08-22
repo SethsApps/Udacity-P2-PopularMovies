@@ -8,12 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MovieResponse implements Parcelable {
+import me.sethallen.popularmovies.interfaces.ITMDBResponse;
 
-    private int page;
+public class Movies implements Parcelable, ITMDBResponse<Movie> {
+
+    private Integer page;
     private List<Movie> results = new ArrayList<>();
-    private int totalResults;
-    private int totalPages;
+    private Integer totalResults;
+    private Integer totalPages;
     private Map<String, Object> additionalProperties = new HashMap<>();
 
 
@@ -21,7 +23,7 @@ public class MovieResponse implements Parcelable {
      * No args constructor for use in serialization
      *
      */
-    public MovieResponse() {
+    public Movies() {
     }
 
     /**
@@ -31,7 +33,7 @@ public class MovieResponse implements Parcelable {
      * @param page
      * @param totalPages
      */
-    public MovieResponse(int page, List<Movie> results, int totalResults, int totalPages) {
+    public Movies(Integer page, List<Movie> results, Integer totalResults, Integer totalPages) {
         this.page = page;
         this.results = results;
         this.totalResults = totalResults;
@@ -44,7 +46,7 @@ public class MovieResponse implements Parcelable {
      * @return
      * The page
      */
-    public int getPage() {
+    public Integer getPage() {
         return page;
     }
 
@@ -53,7 +55,7 @@ public class MovieResponse implements Parcelable {
      * @param page
      * The page
      */
-    public void setPage(int page) {
+    public void setPage(Integer page) {
         this.page = page;
     }
 
@@ -80,7 +82,7 @@ public class MovieResponse implements Parcelable {
      * @return
      * The totalResults
      */
-    public int getTotalResults() {
+    public Integer getTotalResults() {
         return totalResults;
     }
 
@@ -89,7 +91,7 @@ public class MovieResponse implements Parcelable {
      * @param totalResults
      * The total_results
      */
-    public void setTotalResults(int totalResults) {
+    public void setTotalResults(Integer totalResults) {
         this.totalResults = totalResults;
     }
 
@@ -98,7 +100,7 @@ public class MovieResponse implements Parcelable {
      * @return
      * The totalPages
      */
-    public int getTotalPages() {
+    public Integer getTotalPages() {
         return totalPages;
     }
 
@@ -107,7 +109,7 @@ public class MovieResponse implements Parcelable {
      * @param totalPages
      * The total_pages
      */
-    public void setTotalPages(int totalPages) {
+    public void setTotalPages(Integer totalPages) {
         this.totalPages = totalPages;
     }
 
@@ -133,7 +135,7 @@ public class MovieResponse implements Parcelable {
         //dest.writeParcelable(this.additionalProperties, flags);
     }
 
-    protected MovieResponse(Parcel in) {
+    protected Movies(Parcel in) {
         this.page = in.readInt();
         this.results = in.createTypedArrayList(Movie.CREATOR);
         this.totalResults = in.readInt();
@@ -141,13 +143,13 @@ public class MovieResponse implements Parcelable {
         //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
     }
 
-    public static final Parcelable.Creator<MovieResponse> CREATOR = new Parcelable.Creator<MovieResponse>() {
-        public MovieResponse createFromParcel(Parcel source) {
-            return new MovieResponse(source);
+    public static final Parcelable.Creator<Movies> CREATOR = new Parcelable.Creator<Movies>() {
+        public Movies createFromParcel(Parcel source) {
+            return new Movies(source);
         }
 
-        public MovieResponse[] newArray(int size) {
-            return new MovieResponse[size];
+        public Movies[] newArray(int size) {
+            return new Movies[size];
         }
     };
 }

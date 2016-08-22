@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.view;
+package me.sethallen.popularmovies.fresco;
 
 import android.content.Context;
 import android.graphics.drawable.Animatable;

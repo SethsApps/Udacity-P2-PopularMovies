@@ -1,7 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/parent_relativeLayout"
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:fresco="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    card_view:cardCornerRadius="5dp"
+    card_view:cardElevation="4dp"
+    android:layout_marginTop="10dp"
+    card_view:cardPreventCornerOverlap="false"
+    card_view:cardUseCompatPadding="true">
 
-</RelativeLayout>
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <me.sethallen.popularmovies.fresco.WrapContentDraweeView
+            android:id="@+id/card_view_video_thumbnail"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentRight="true"
+            android:scaleType="fitXY"
+            fresco:fadeDuration="300"
+            fresco:actualImageScaleType="fitCenter"
+            fresco:placeholderImage="@color/placeholder_image_color"
+            fresco:placeholderImageScaleType="fitCenter"
+            fresco:failureImage="@color/failure_image_color"
+            fresco:failureImageScaleType="centerInside"
+            fresco:retryImage="@color/retrying_image_color"
+            fresco:retryImageScaleType="centerCrop"
+            fresco:progressBarImage="@color/progress_bar_color"
+            fresco:progressBarImageScaleType="centerInside"
+            fresco:progressBarAutoRotateInterval="1000"
+            fresco:pressedStateOverlayImage="@color/pressed_state_overlay_color"
+            />
+
+        <ImageView android:id="@+id/button_youtube_player"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:scaleType="center"
+            android:src="@drawable/ic_play_circle_filled_white" />
+
+        <TextView
+            android:id="@+id/card_view_video_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="10dp"
+            android:layout_centerHorizontal="true"
+            android:textSize="18sp"
+            android:textColor="@android:color/white"
+            android:shadowColor="#000000"
+            android:shadowDx="1.5"
+            android:shadowDy="1.3"
+            android:shadowRadius="2.1" />
+
+    </RelativeLayout>
+</android.support.v7.widget.CardView>

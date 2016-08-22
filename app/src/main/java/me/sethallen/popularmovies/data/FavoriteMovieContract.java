@@ -53,6 +53,7 @@ public class FavoriteMovieContract {
                         COLUMN_VOTE_AVERAGE,
                         COLUMN_BACKDROP_PATH,
                         COLUMN_POSTER_PATH
+
                 };
 
         public static Uri BuildMovieUri(long id)

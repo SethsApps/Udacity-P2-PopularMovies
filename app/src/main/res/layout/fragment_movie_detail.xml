@@ -24,7 +24,7 @@
             app:titleEnabled="false"
             android:fitsSystemWindows="true">
 
-            <me.sethallen.popularmovies.view.WrapContentDraweeView
+            <me.sethallen.popularmovies.fresco.WrapContentDraweeView
                 android:id="@+id/backdrop_image_view"
                 android:layout_width="match_parent"
                 android:layout_height="192dp"

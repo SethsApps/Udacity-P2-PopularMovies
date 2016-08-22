@@ -1,49 +1,98 @@
 package me.sethallen.popularmovies.fragment;
 
 import android.content.Context;
-import android.graphics.Bitmap;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.graphics.Palette;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutCompat;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
 import com.facebook.drawee.backends.pipeline.Fresco;
 import com.facebook.drawee.backends.pipeline.PipelineDraweeController;
-import com.facebook.imagepipeline.request.BasePostprocessor;
 import com.facebook.imagepipeline.request.ImageRequest;
 import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
-import java.text.SimpleDateFormat;
-import java.util.Locale;
-
-import me.sethallen.popularmovies.R;
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import me.sethallen.popularmovies.adapter.ReviewAdapter;
+import me.sethallen.popularmovies.adapter.VideoAdapter;
+import me.sethallen.popularmovies.fresco.ImagePostProcessorForCollapsingToolbarLayoutDynamicTheme;
 import me.sethallen.popularmovies.interfaces.IAsyncTaskResultHandler;
+import me.sethallen.popularmovies.interfaces.IDisplayItems;
+import me.sethallen.popularmovies.interfaces.IFavoriteStatusObserver;
 import me.sethallen.popularmovies.model.Movie;
-import me.sethallen.popularmovies.tasks.ManageFavoriteMovieTask;
-import me.sethallen.popularmovies.view.WrapContentDraweeView;
+import me.sethallen.popularmovies.model.Review;
+import me.sethallen.popularmovies.model.Reviews;
+import me.sethallen.popularmovies.model.Video;
+import me.sethallen.popularmovies.R;
+import me.sethallen.popularmovies.model.Videos;
+import me.sethallen.popularmovies.task.ManageFavoriteMovieTask;
+import me.sethallen.popularmovies.task.TMDBLoaderTask;
+import me.sethallen.popularmovies.utility.UriHelper;
+import me.sethallen.popularmovies.fresco.WrapContentDraweeView;
 
-public class MovieDetailFragment extends Fragment implements IAsyncTaskResultHandler {
+public class MovieDetailFragment extends Fragment
+        implements IAsyncTaskResultHandler {
 
-    private static       String LOG_TAG   = MovieDetailFragment.class.getSimpleName();
-    private static final String ARG_MOVIE = "movie";
-    private              Movie  mMovie;
-    private              CoordinatorLayout       _coordinatorLayout;
-    private              FloatingActionButton    _fabFavorite;
-    private              CollapsingToolbarLayout mCollapsingToolbar;
-    private              Toolbar                 mToolbar;
+    private static       String                   LOG_TAG           = MovieDetailFragment.class.getSimpleName();
+    private static final String                   STATE_MOVIE       = "state-movie";
+    private static final String                   STATE_MOVIE_WAS_FAVORITE_ALREADY = "state-movie-favorite-already";
+    private static final String                   STATE_VIDEO_LIST  = "state-movie-list";
+    private static final String                   STATE_REVIEW_LIST = "state-review-list";
+    private              Movie                    mMovie;
+    private              boolean                  mMovieWasFavoriteAlready;
+    private              IFavoriteStatusObserver  mFavoriteStatusObserver;
+    private              OnVideoSelectedListener  mVideoClickListener = null;
+    private              GridLayoutManager        mVideoGridLayoutManager;
+    private              VideoAdapter             mVideoAdapter;
+    private              VideoDisplayer           mVideoDisplayer;
+    private              OnReviewSelectedListener mReviewClickListener = null;
+    private              GridLayoutManager        mReviewGridLayoutManager;
+    private              ReviewAdapter            mReviewAdapter;
+    private              ReviewDisplayer          mReviewDisplayer;
+    private              MenuItem                 mShareMenuItem;
+    private              ShareActionProvider      mShareActionProvider;
+
+    @BindView(R.id.coordinator_layout)                  CoordinatorLayout       mCoordinatorLayout;
+    @BindView(R.id.fab_favorite)                        FloatingActionButton    mFabFavorite;
+    @BindView(R.id.collapsing_toolbar)                  CollapsingToolbarLayout mCollapsingToolbar;
+    @BindView(R.id.toolbar)                             Toolbar                 mToolbar;
+    @BindView(R.id.backdrop_image_view)                 WrapContentDraweeView   mBackdropImage;
+    @BindView(R.id.card_view_movie_poster)              WrapContentDraweeView   mPosterImage;
+    @BindView(R.id.content_movie_detail_title)          TextView                mMovieTitle;
+    @BindView(R.id.content_movie_detail_release_date)   TextView                mMovieReleaseDate;
+    @BindView(R.id.content_movie_detail_average_rating) TextView                mVoteAverage;
+    @BindView(R.id.content_movie_detail_text_view)      TextView                mMovieOverview;
+    @BindView(R.id.trailers_section)                    LinearLayoutCompat      mTrailersSection;
+    @BindView(R.id.recycler_view_videos)                RecyclerView            mVideoRecyclerView;
+    @BindView(R.id.reviews_section)                     LinearLayoutCompat      mReviewsSection;
+    @BindView(R.id.recycler_view_reviews)               RecyclerView            mReviewRecyclerView;
 
     public MovieDetailFragment() {
 
@@ -59,22 +108,36 @@ public class MovieDetailFragment extends Fragment implements IAsyncTaskResultHan
     public static MovieDetailFragment newInstance(Movie movie) {
         MovieDetailFragment fragment = new MovieDetailFragment();
         Bundle args = new Bundle();
-        args.putParcelable(ARG_MOVIE, movie);
+        args.putParcelable(STATE_MOVIE, movie);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        Bundle args = new Bundle();
+
+        args.putParcelable(STATE_MOVIE,                   mMovie);
+        args.putBoolean(STATE_MOVIE_WAS_FAVORITE_ALREADY, mMovieWasFavoriteAlready);
+        args.putSerializable(STATE_VIDEO_LIST,            mVideoAdapter.getVideoList());
+
+        outState.putAll(args);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState)
     {
-
         View v = inflater.inflate(R.layout.fragment_movie_detail, container, false);
-
-        _coordinatorLayout = (CoordinatorLayout) v.findViewById(R.id.coordinator_layout);
-        _fabFavorite       = (FloatingActionButton) v.findViewById(R.id.fab_favorite);
-        mCollapsingToolbar = (CollapsingToolbarLayout) v.findViewById(R.id.collapsing_toolbar);
-        mToolbar           = (Toolbar) v.findViewById(R.id.toolbar);
+        ButterKnife.bind(this, v);
 
         AppCompatActivity activity = (AppCompatActivity)getActivity();
         activity.setSupportActionBar(mToolbar);
@@ -90,143 +153,154 @@ public class MovieDetailFragment extends Fragment implements IAsyncTaskResultHan
         {
             return v;
         }
-
-        mMovie = getArguments().getParcelable(ARG_MOVIE);
-        if (mMovie == null)
+        else
         {
-            return v;
+            mMovie                   = getArguments().getParcelable(STATE_MOVIE);
+            mMovieWasFavoriteAlready = mMovie.GetIsFavorite();
         }
 
         final MovieDetailFragment thisClass = this;
 
         setFavoriteButtonDrawable();
 
-        _fabFavorite.setOnClickListener(new View.OnClickListener() {
+        mFabFavorite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //Snackbar.make(view, "Saving Favorite", Snackbar.LENGTH_LONG)
-                //        .setAction("Action", null).show();
-
                 ManageFavoriteMovieTask task
                         = new ManageFavoriteMovieTask(getActivity(), thisClass);
                 task.execute(mMovie);
             }
         });
 
-        Log.d(LOG_TAG, "Backdrop Uri: " + mMovie.getBackdropUri().toString());
-
-        WrapContentDraweeView imageView;
-        TextView              textView;
+        Log.d(LOG_TAG, "Backdrop Uri: " + mMovie.getBackdropUriString());
 
         Log.d(LOG_TAG, "Attempting to set Backdrop ImageView with Backdrop Path: " + mMovie.getBackdropPath());
-        imageView = (WrapContentDraweeView) v.findViewById(R.id.backdrop_image_view);
-
+        // Build an ImageRequest using the customer PostProcessor that
+        // dynamically themes the CollapsingToolBarLayout so the theme will be based
+        // on colors from the Backdrop image.
         ImageRequest request = ImageRequestBuilder.newBuilderWithSource(mMovie.getBackdropUri())
-                .setPostprocessor(new BasePostprocessor() {
-                    @Override
-                    public String getName() {
-                        return "DynamicThemeFromImagePostProcessor";
-                    }
-
-                    @Override
-                    public void process(Bitmap bitmap) {
-                        Palette.from(bitmap)
-                                .generate(new Palette.PaletteAsyncListener() {
-                                    @Override
-                                    public void onGenerated(Palette palette) {
-                                        Palette.Swatch swatch;
-                                        if ((swatch = palette.getVibrantSwatch()) == null) {
-                                            if ((swatch = palette.getDarkVibrantSwatch()) == null) {
-                                                if ((swatch = palette.getLightVibrantSwatch()) == null) {
-                                                    if ((swatch = palette.getMutedSwatch()) == null) {
-                                                        if ((swatch = palette.getDarkMutedSwatch()) == null) {
-                                                            if ((swatch = palette.getLightMutedSwatch()) == null) {
-                                                                // No swatches for the image were found
-                                                                return;
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        int mutedColor = swatch.getRgb();
-                                        mCollapsingToolbar.setBackgroundColor(mutedColor);
-                                        mCollapsingToolbar.setStatusBarScrimColor(palette.getDarkMutedColor(mutedColor));
-                                        mCollapsingToolbar.setContentScrimColor(palette.getMutedColor(mutedColor));
-                                    }
-                                });
-                    }
-                })
+                .setPostprocessor(new ImagePostProcessorForCollapsingToolbarLayoutDynamicTheme(mCollapsingToolbar))
                 .build();
-
+        // Create the drawee controller that uses the customer ImageRequest from above to
+        // load the BackdropImage and apply the dynamic themeing to the toolbar layout based on the image.
         PipelineDraweeController controller = (PipelineDraweeController)
                 Fresco.newDraweeControllerBuilder()
                 .setImageRequest(request)
-                .setOldController(imageView.getController())
+                .setOldController(mBackdropImage.getController())
                 .build();
-
-        imageView.setController(controller);
+        // Set the controller, which causes the image to be loaded and the layout to be themed.
+        mBackdropImage.setController(controller);
 
         Log.d(LOG_TAG, "Attempting to set Poster ImageView with Poster Path: " + mMovie.getPosterPath());
-        imageView = (WrapContentDraweeView) v.findViewById(R.id.card_view_movie_poster);
-        imageView.setImageURI(mMovie.getPosterUri());
+        mPosterImage.setImageURI(mMovie.getPosterUri());
 
-        Log.d(LOG_TAG, "Attempting to set TextView with Title: " + mMovie.getTitle());
-        textView = (TextView) v.findViewById(R.id.content_movie_detail_title);
-        textView.setText(mMovie.getTitle());
+        mMovieTitle.setText(mMovie.getTitle());
 
-        Log.d(LOG_TAG, "Attempting to set TextView with Rel easeDate: " + mMovie.getReleaseDate());
-        textView = (TextView) v.findViewById(R.id.content_movie_detail_release_date);
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d, y", Locale.US);
-        String releaseDate = String.format(
-                getString(R.string.movie_detail_release_date),
-                sdf.format(mMovie.getReleaseDateAsDate()));
-        textView.setText(releaseDate);
+        String releaseDate = String.format(getString(R.string.movie_detail_release_date), sdf.format(mMovie.getReleaseDateAsDate()));
+        mMovieReleaseDate.setText(releaseDate);
 
-        Log.d(LOG_TAG, "Attempting to set TextView with VoteAverage: " + mMovie.getVoteAverage());
-        textView = (TextView) v.findViewById(R.id.content_movie_detail_average_rating);
+        String rating = String.format(getString(R.string.movie_detail_rating), Float.toString(mMovie.getVoteAverage()));
+        mVoteAverage.setText(rating);
 
-        String rating = String.format(
-                getString(R.string.movie_detail_rating),
-                Float.toString(mMovie.getVoteAverage()));
-        textView.setText(rating);
-        //textView.setText("Rating: " + Float.toString(mMovie.getVoteAverage()) + "/10");
-
-        Log.d(LOG_TAG, "Attempting to set TextView with Overview: " + mMovie.getOverview());
-        textView = (TextView) v.findViewById(R.id.content_movie_detail_text_view);
-        textView.setText(mMovie.getOverview());
+        mMovieOverview.setText(mMovie.getOverview());
 
         return v;
     }
 
-    /**
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
+        super.onCreateOptionsMenu(menu, menuInflater);
+        menuInflater.inflate(R.menu.menu_movie_detail_fragment, menu);
+        mShareMenuItem       = menu.findItem(R.id.action_share);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(mShareMenuItem);
+
+        mShareMenuItem.setVisible(false);
+        if (mVideoAdapter != null)
+        {
+            List<Video> videoList = mVideoAdapter.getVideoList();
+            if (videoList != null && !videoList.isEmpty())
+            {
+                updateShareMovieAction(videoList.get(0));
+            }
         }
     }
-     */
+
+    @SuppressWarnings("deprecation")
+    private void updateShareMovieAction(Video video) {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.setType("text/plain");
+
+        String shareMessage = "Look at this trailer I found for "
+                + mMovie.getOriginalTitle()
+                + "\n"
+                + UriHelper.getYouTubeUri(video.getKey());
+
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage);
+
+        if (mShareMenuItem != null && mShareActionProvider != null)
+        {
+            mShareMenuItem.setVisible(true);
+            mShareActionProvider.setShareIntent(shareIntent);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        initializeVideosGrid();
+        initializeReviewsGrid();
+
+        if (savedInstanceState != null) {
+            mMovie                   = savedInstanceState.getParcelable(STATE_MOVIE);
+            mMovieWasFavoriteAlready = savedInstanceState.getBoolean(STATE_MOVIE_WAS_FAVORITE_ALREADY);
+            List<Video> videoList    = (ArrayList<Video>) savedInstanceState.getSerializable(STATE_VIDEO_LIST);
+            List<Review> reviewList  = (ArrayList<Review>) savedInstanceState.getSerializable(STATE_REVIEW_LIST);
+
+            appendVideos(videoList);
+            appendReviews(reviewList);
+        }
+        else {
+            loadVideos();
+            loadReviews();
+        }
+    }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
 
-        /**
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
+        if (context instanceof OnVideoSelectedListener) {
+            mVideoClickListener = (OnVideoSelectedListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
+                    + " must implement OnVideoSelectedListener");
         }
-         */
+
+        if (context instanceof OnReviewSelectedListener) {
+            mReviewClickListener = (OnReviewSelectedListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnReviewSelectedListener");
+        }
+
+        if (context instanceof IFavoriteStatusObserver) {
+            mFavoriteStatusObserver = (IFavoriteStatusObserver) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement IFavoriteStatusObserver");
+        }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        //mListener = null;
+        mVideoClickListener     = null;
+        mReviewClickListener    = null;
+        mFavoriteStatusObserver = null;
     }
 
     @Override
@@ -241,60 +315,188 @@ public class MovieDetailFragment extends Fragment implements IAsyncTaskResultHan
             mMovie.SetIsFavorite(false);
         }
 
+        Log.d(LOG_TAG, "Calling mFavoriteStatusObserver favoriteStatusChanged: Already="
+                + mMovieWasFavoriteAlready
+                + " status="
+                + mMovie.GetIsFavorite());
+        mFavoriteStatusObserver.favoriteStatusChanged(mMovieWasFavoriteAlready != mMovie.GetIsFavorite());
+
         setFavoriteButtonDrawable();
 
-        Snackbar.make(_coordinatorLayout, mMovie.getTitle() + " " + result, Snackbar.LENGTH_LONG)
+        Snackbar.make(mCoordinatorLayout, mMovie.getTitle() + " " + result, Snackbar.LENGTH_LONG)
                 .show();
-
-
-//        if (operationType == ADDED_TO_FAVORITE) {
-//            fabFavorite.setImageDrawable(R.drawable.ic_favorite);
-//            //mSPManagerFavMovies.putBoolean(mMovie.getId(), true);
-//        } else {
-//            fabFavorite.setImageDrawable(R.drawable.ic_favorite_border);
-//            //mSPManagerFavMovies.putBoolean(mMovie.getId(), false);
-//        }
-
-        //NetworkUtils.showSnackbar(mCoordinatorLayout, mMovie.getTitle() + " " + result);
     }
 
     @Override
     public void onFailure()
     {
-        //NetworkUtils.showSnackbar(mCoordinatorLayout, mMovie.getTitle() + " " + somethingWentWrong);
-    }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    /**
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
     }
-     */
 
     private void setFavoriteButtonDrawable()
     {
         Drawable drawableFavorite;
         if (mMovie.GetIsFavorite())
         {
-            //drawableFavorite = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite, null);
             drawableFavorite = ContextCompat.getDrawable(getActivity(), R.drawable.ic_favorite);
         }
         else
         {
-            //drawableFavorite = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_favorite_border, null);
             drawableFavorite = ContextCompat.getDrawable(getActivity(), R.drawable.ic_favorite_border);
         }
 
-        _fabFavorite.setImageDrawable(drawableFavorite);
+        mFabFavorite.setImageDrawable(drawableFavorite);
+    }
+
+    public void loadVideos() {
+        int retryCount = 0;
+        do {
+            try {
+                TMDBLoaderTask<Videos, Video> videoLoaderTask = new TMDBLoaderTask<>(this, mVideoDisplayer);
+                TMDBLoaderTask.LoaderArgs args = videoLoaderTask.new LoaderArgs(String.valueOf(mMovie.getId()),
+                                                                                 "getVideos");
+
+                videoLoaderTask.execute(args);
+                break;
+            }
+            catch (Exception ex)
+            {
+                retryCount++;
+            }
+        } while (retryCount < 3);
+    }
+
+    public void loadReviews() {
+        int retryCount = 0;
+        do {
+            try {
+                TMDBLoaderTask<Reviews, Review> reviewLoaderTask = new TMDBLoaderTask<>(this, mReviewDisplayer);
+                TMDBLoaderTask.LoaderArgs args = reviewLoaderTask.new LoaderArgs(String.valueOf(mMovie.getId()),
+                                                                                 "getReviews");
+                reviewLoaderTask.execute(args);
+                break;
+            }
+            catch (Exception ex)
+            {
+                retryCount++;
+            }
+        } while (retryCount < 3);
+    }
+
+    private void initializeVideosGrid()
+    {
+        // instantiate the grid layout manager if it's null and set it on the objects that depend on it,
+        // otherwise ensure that dependent objects have it if it already existed.
+        if (mVideoGridLayoutManager == null) {
+            mVideoGridLayoutManager = new GridLayoutManager(getContext(), 1, GridLayoutManager.HORIZONTAL, false);
+            mVideoRecyclerView.setLayoutManager(mVideoGridLayoutManager);
+        } else if (mVideoRecyclerView.getLayoutManager() == null) {
+            mVideoRecyclerView.setLayoutManager(mVideoGridLayoutManager);
+        }
+
+        // instantiate the adapter if it's null and set it on the objects that depend on it,
+        // otherwise ensure that dependent objects have it if it already existed.
+        if (mVideoAdapter == null) {
+            mVideoAdapter = new VideoAdapter(mVideoClickListener);
+            mVideoRecyclerView.setAdapter(mVideoAdapter);
+        } else {
+            if (mVideoRecyclerView.getAdapter() == null) {
+                mVideoRecyclerView.setAdapter(mVideoAdapter);
+            }
+        }
+
+        if (mVideoDisplayer == null) {
+            mVideoDisplayer = new VideoDisplayer(this);
+        }
+    }
+
+    private void initializeReviewsGrid()
+    {
+        // instantiate the grid layout manager if it's null and set it on the objects that depend on it,
+        // otherwise ensure that dependent objects have it if it already existed.
+        if (mReviewGridLayoutManager == null) {
+            mReviewGridLayoutManager = new GridLayoutManager(getContext(), 1, GridLayoutManager.VERTICAL, false);
+            mReviewRecyclerView.setLayoutManager(mReviewGridLayoutManager);
+        } else if (mReviewRecyclerView.getLayoutManager() == null) {
+            mReviewRecyclerView.setLayoutManager(mReviewGridLayoutManager);
+        }
+
+        // instantiate the adapter if it's null and set it on the objects that depend on it,
+        // otherwise ensure that dependent objects have it if it already existed.
+        if (mReviewAdapter == null) {
+            mReviewAdapter = new ReviewAdapter(this.getContext(), mReviewClickListener);
+            mReviewRecyclerView.setAdapter(mReviewAdapter);
+        } else {
+            if (mReviewRecyclerView.getAdapter() == null) {
+                mReviewRecyclerView.setAdapter(mReviewAdapter);
+            }
+        }
+
+        if (mReviewDisplayer == null) {
+            mReviewDisplayer = new ReviewDisplayer(this);
+        }
+    }
+
+    private void appendVideos(List<Video> items) {
+        // Hide the trailers section if there are no items to show
+        if (items == null || items.isEmpty()) {
+            mTrailersSection.setVisibility(View.GONE);
+            return;
+        }
+
+        mVideoAdapter.clear();
+        mVideoAdapter.appendItems(items);
+        updateShareMovieAction(items.get(0));
+
+        // Show the trailers section now that we've added them to the Video Adapter
+        mTrailersSection.setVisibility(View.VISIBLE);
+    }
+
+    private void appendReviews(List<Review> items) {
+        // Hide the reviews section if there are no items to show
+        if (items == null || items.isEmpty()) {
+            mReviewsSection.setVisibility(View.GONE);
+            return;
+        }
+
+        mReviewAdapter.clear();
+        mReviewAdapter.appendItems(items);
+
+        // Show the reviews section now that we've added them to the Video Adapter
+        mReviewsSection.setVisibility(View.VISIBLE);
+    }
+
+    public static class VideoDisplayer implements IDisplayItems<Video> {
+        private MovieDetailFragment mMovieDetailFragment;
+
+        public VideoDisplayer(MovieDetailFragment movieDetailFragment) {
+            this.mMovieDetailFragment = movieDetailFragment;
+        }
+
+        @Override
+        public void appendItems(List<Video> items) {
+            mMovieDetailFragment.appendVideos(items);
+        }
+    }
+
+    public static class ReviewDisplayer implements IDisplayItems<Review> {
+        private MovieDetailFragment mMovieDetailFragment;
+
+        public ReviewDisplayer(MovieDetailFragment movieDetailFragment) {
+            this.mMovieDetailFragment = movieDetailFragment;
+        }
+
+        @Override
+        public void appendItems(List<Review> items) {
+            mMovieDetailFragment.appendReviews(items);
+        }
+    }
+
+    public interface OnVideoSelectedListener {
+        void onVideoSelected(Video video);
+    }
+
+    public interface OnReviewSelectedListener {
+        void onReviewSelected(Review review);
     }
 }

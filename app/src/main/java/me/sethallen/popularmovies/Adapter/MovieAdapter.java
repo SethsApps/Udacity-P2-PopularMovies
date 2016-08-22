@@ -1,15 +1,16 @@
 package me.sethallen.popularmovies.adapter;
 
 import android.content.Context;
+import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.facebook.drawee.view.SimpleDraweeView;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.facebook.drawee.view.SimpleDraweeView;
 
 import me.sethallen.popularmovies.fragment.MainActivityFragment;
 import me.sethallen.popularmovies.model.Movie;
@@ -53,7 +54,15 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
         // Get the data model based on position
         Movie movie = this.mMovieList.get(position);
 
-        holder.PosterImageView.setImageURI(movie.getPosterUri());
+        if (movie.hasPosterUri())
+        {
+            holder.PosterImageView.setImageURI(movie.getPosterUri());
+        }
+        else
+        {
+            String path = "res:/" + R.drawable.ic_action_movie;
+            holder.PosterImageView.setImageURI(Uri.parse(path));
+        }
     }
 
     public ArrayList<Movie> getMovieList() { return this.mMovieList; }

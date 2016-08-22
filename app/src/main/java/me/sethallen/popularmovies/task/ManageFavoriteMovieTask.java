@@ -1,4 +1,4 @@
-package me.sethallen.popularmovies.tasks;
+package me.sethallen.popularmovies.task;
 
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -24,7 +24,6 @@ public class ManageFavoriteMovieTask extends AsyncTask<Movie, Void, String>
     public static final String RESULT_FAILURE                      = "failure";
     public static final String RESULT_ADDED_MOVIE_TO_FAVORITES     = "added to favorites";
     public static final String RESULT_REMOVED_MOVIE_FROM_FAVORITES = "removed from favorites";
-
 
     public ManageFavoriteMovieTask(Context context, IAsyncTaskResultHandler resultHandler) {
         _context       = context;

@@ -2,7 +2,6 @@ package me.sethallen.popularmovies.fragment;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -20,31 +19,25 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import me.sethallen.popularmovies.R;
 import me.sethallen.popularmovies.activity.BaseActivity;
 import me.sethallen.popularmovies.adapter.MovieAdapter;
-import me.sethallen.popularmovies.data.FavoriteMovieContract.FavoriteMovieEntry;
-import me.sethallen.popularmovies.data.FavoriteMovieDbHelper;
+import me.sethallen.popularmovies.interfaces.IDisplayItems;
+import me.sethallen.popularmovies.interfaces.IFavoriteStatusObserver;
 import me.sethallen.popularmovies.model.Configuration;
 import me.sethallen.popularmovies.model.Movie;
-import me.sethallen.popularmovies.model.MovieResponse;
+import me.sethallen.popularmovies.R;
 import me.sethallen.popularmovies.service.TheMovieDBService;
-import retrofit2.Call;
-import retrofit2.Response;
+import me.sethallen.popularmovies.task.FavoriteMovieLoaderTask;
+import me.sethallen.popularmovies.task.TMDBMovieLoaderTask;
+import me.sethallen.popularmovies.utility.NetworkHelper;
+import me.sethallen.popularmovies.utility.RetrofitHelper;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link MainActivityFragment.OnMovieSelectedListener} interface
- * to handle interaction events.
- * Use the {@link MainActivityFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class MainActivityFragment extends Fragment {
+public class MainActivityFragment extends Fragment
+        implements IDisplayItems<Movie>,
+                   IFavoriteStatusObserver {
 
     private static String       LOG_TAG                         = MainActivityFragment.class.getSimpleName();
     private static final String STATE_PAGE                      = "state-page";
@@ -123,13 +116,13 @@ public class MainActivityFragment extends Fragment {
 
         ArrayList<Movie> movieList = null;
         if (savedInstanceState != null) {
-            mPage        = savedInstanceState.getInt(STATE_PAGE);
-            mQueryType   = savedInstanceState.getString(STATE_QUERY_TYPE);
-            movieList    = (ArrayList<Movie>) savedInstanceState.getSerializable(STATE_MOVIE_LIST);
+            mPage      = savedInstanceState.getInt(STATE_PAGE);
+            mQueryType = savedInstanceState.getString(STATE_QUERY_TYPE);
+            movieList  = (ArrayList<Movie>) savedInstanceState.getSerializable(STATE_MOVIE_LIST);
             // TODO: Add tracking of scroll position and scrolling back to that position, after adding Endless Scrolling in P2
         } else {
-            mPage        = 0;
-            mQueryType   = TMDB_MOVIE_POPULAR_QUERY_TYPE;
+            mPage      = 0;
+            mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
         }
 
         intializeGrid(movieList);
@@ -191,22 +184,7 @@ public class MainActivityFragment extends Fragment {
                                 {
                                     return;
                                 }
-                                mPage = 0;
-                                switch (which)
-                                {
-                                    case SORT_OPTION_INDEX_MOST_POPULAR:
-                                        mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
-                                        break;
-                                    case SORT_OPTION_INDEX_HIGHEST_RATED:
-                                        mQueryType = TMDB_MOVIE_TOP_RATED_QUERY_TYPE;
-                                        break;
-                                    case SORT_OPTION_INDEX_FAVORITES:
-                                    default:
-                                        mQueryType = TMDB_MOVIE_FAVORITE_QUERY_TYPE;
-                                        break;
-
-                                }
-                                loadMovies();
+                                refreshGrid(which);
 
                                 dialog.dismiss();
                             }
@@ -242,8 +220,15 @@ public class MainActivityFragment extends Fragment {
         mListener = null;
     }
 
-    public interface OnMovieSelectedListener {
-        void onMovieSelected(Movie movie);
+    @Override
+    public void favoriteStatusChanged(boolean statusChanged) {
+        Log.d(LOG_TAG, "handling favoriteStatusChanged=" + statusChanged);
+        // Only reload the movies grid if statusChanged and Favorites are already what are shown.
+        if (statusChanged && mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
+        {
+            Log.d(LOG_TAG, "calling loadMovies due to favoriteStatusChanged");
+            loadMovies();
+        }
     }
 
     private void intializeGrid(ArrayList<Movie> movieList)
@@ -257,16 +242,38 @@ public class MainActivityFragment extends Fragment {
         if (movieList == null) {
             loadMovies();
         } else {
-            appendMoviesToGrid(movieList);
+            appendItems(movieList);
         }
     }
 
-    public void loadMovies() {
-        mPage += 1;
+    private void refreshGrid(int sortOption)
+    {
+        mPage = 0;
+        switch (sortOption)
+        {
+            case SORT_OPTION_INDEX_MOST_POPULAR:
+                mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
+                break;
+            case SORT_OPTION_INDEX_HIGHEST_RATED:
+                mQueryType = TMDB_MOVIE_TOP_RATED_QUERY_TYPE;
+                break;
+            case SORT_OPTION_INDEX_FAVORITES:
+            default:
+                mQueryType = TMDB_MOVIE_FAVORITE_QUERY_TYPE;
+                break;
+
+        }
+        loadMovies();
+    }
+
+    private void loadMovies() {
+        // TODO: use this incrementing logic if endless scrolling is added to the app
+        //mPage += 1;
+        mPage = 1;
 
         if (mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
         {
-            FavoriteMovieLoaderTask movieLoaderTask = new FavoriteMovieLoaderTask();
+            FavoriteMovieLoaderTask movieLoaderTask = new FavoriteMovieLoaderTask(this, this);
             movieLoaderTask.execute();
             return;
         }
@@ -274,8 +281,8 @@ public class MainActivityFragment extends Fragment {
         int retryCount = 0;
         do {
             try {
-                TMDBMovieLoaderTask movieLoaderTask = new TMDBMovieLoaderTask();
-                MovieLoaderArgs args                = new MovieLoaderArgs(mQueryType, mPage);
+                TMDBMovieLoaderTask                 movieLoaderTask = new TMDBMovieLoaderTask(this, this);
+                TMDBMovieLoaderTask.MovieLoaderArgs args = movieLoaderTask.new MovieLoaderArgs(mQueryType, mPage);
 
                 movieLoaderTask.execute(args);
                 break;
@@ -287,119 +294,7 @@ public class MainActivityFragment extends Fragment {
         } while (retryCount < 3);
     }
 
-    private class MovieLoaderArgs
-    {
-        private String mQueryType;
-        private String mPage;
-
-        public String getQueryType() {
-            return mQueryType;
-        }
-
-        public String getPage() {
-            return mPage;
-        }
-
-        public MovieLoaderArgs(String queryType, Integer page) {
-            this.mQueryType = queryType;
-            this.mPage      = String.valueOf(page);
-        }
-    }
-
-    private class TMDBMovieLoaderTask extends AsyncTask<MovieLoaderArgs, Void, List<Movie>> {
-
-        @Override
-        protected List<Movie> doInBackground(MovieLoaderArgs... params) {
-
-            MovieLoaderArgs args = params[0];
-            String apiKey = getString(R.string.api_key_tmdb);
-
-            final TheMovieDBService movieApi = TheMovieDBService.Factory.create(getString(R.string.base_url_tmdb));
-
-            Log.d(LOG_TAG, "attempting to call getMovies with key " + apiKey
-                    + " and QueryType " + args.getQueryType()
-                    + " for Page " + args.getPage());
-
-            MovieResponse movieResponse = executeCall(movieApi.getMovies(args.getQueryType(), apiKey, args.getPage()));
-
-            if (movieResponse == null) {
-                Log.d(LOG_TAG, "response from getMovies() call is null");
-                return null;
-            }
-            List<Movie> movieResultList = movieResponse.getResults();
-            if (movieResultList == null) {
-                Log.d(LOG_TAG, "movie results list from getMovies() call is null");
-                return null;
-            } else {
-                Log.d(LOG_TAG, "movie results list from getMovies() call size is: " + movieResultList.size());
-            }
-
-            return movieResultList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Movie> movies) {
-            super.onPostExecute(movies);
-
-            appendMoviesToGrid(movies);
-        }
-    }
-
-    private class FavoriteMovieLoaderTask extends AsyncTask<Void, Void, List<Movie>> {
-
-        FavoriteMovieDbHelper _dbHelper;
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            _dbHelper = new FavoriteMovieDbHelper(getContext());
-        }
-
-        @Override
-        protected List<Movie> doInBackground(Void... params) {
-
-            Cursor movieCursor = getActivity().getContentResolver().query(
-                    FavoriteMovieEntry.CONTENT_URI,
-                    FavoriteMovieEntry.COLUMNS,
-                    null,
-                    null,
-                    null);
-
-            List<Movie> favoriteMovieList = new ArrayList<>();
-
-            if (movieCursor.moveToFirst())
-            {
-                Movie movie;
-                do
-                {
-                    movie = new Movie(
-                        movieCursor.getInt(FavoriteMovieEntry.COLUMN_INDEX_MOVIE_ID),
-                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_TITLE),
-                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_OVERVIEW),
-                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_RELEASE_DATE),
-                        movieCursor.getFloat(FavoriteMovieEntry.COLUMN_INDEX_VOTE_AVERAGE),
-                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_BACKDROP_PATH),
-                        movieCursor.getString(FavoriteMovieEntry.COLUMN_INDEX_POSTER_PATH)
-                    );
-                    movie.SetIsFavorite(true);
-                    favoriteMovieList.add(movie);
-                } while (movieCursor.moveToNext());
-            }
-
-            movieCursor.close();
-
-            return favoriteMovieList;
-        }
-
-        @Override
-        protected void onPostExecute(List<Movie> movies) {
-            super.onPostExecute(movies);
-
-            appendMoviesToGrid(movies);
-        }
-    }
-
-    private void appendMoviesToGrid(List<Movie> movies)
+    public void appendItems(List<Movie> movies)
     {
         UpdateMoviesWithIdealSizeAndAddToGridTask task = new UpdateMoviesWithIdealSizeAndAddToGridTask();
         task.execute(movies);
@@ -414,35 +309,40 @@ public class MainActivityFragment extends Fragment {
             }
             List<Movie> movieList = params[0];
 
-            final TheMovieDBService movieApi = TheMovieDBService.Factory.create(getString(R.string.base_url_tmdb));
-            String apiKey = getString(R.string.api_key_tmdb);
-            Log.d(LOG_TAG, "attempting to call getConfiguration with key " + apiKey);
+            Configuration configuration = null;
+            // Only attempt to load configuration if we have internet access.
+            if (NetworkHelper.hasInternetAccess(getContext(), LOG_TAG)) {
 
-            Configuration configuration = executeCall(movieApi.getConfiguration(apiKey));
+                final TheMovieDBService movieApi = TheMovieDBService.Factory.create(getString(R.string.base_url_tmdb));
+                String apiKey = getString(R.string.api_key_tmdb);
+                Log.d(LOG_TAG, "attempting to call getConfiguration with key " + apiKey);
 
-            if (configuration == null) {
-                Log.d(LOG_TAG, "response from getConfiguration() call is null");
-                return null;
-            }
+                configuration = RetrofitHelper.ExecuteCall(movieApi.getConfiguration(apiKey));
 
-            for (String size : configuration.getImages().getPosterSizes()) {
-                Log.d(LOG_TAG, "Poster Size: " + size);
-            }
+                if (configuration == null) {
+                    Log.d(LOG_TAG, "response from getConfiguration() call is null");
+                    return null;
+                }
 
-            for (String size : configuration.getImages().getBackdropSizes()) {
-                Log.d(LOG_TAG, "Backdrop Size: " + size);
-            }
+                for (String size : configuration.getImages().getPosterSizes()) {
+                    Log.d(LOG_TAG, "Poster Size: " + size);
+                }
 
-            for (String size : configuration.getImages().getLogoSizes()) {
-                Log.d(LOG_TAG, "Logo Size: " + size);
-            }
+                for (String size : configuration.getImages().getBackdropSizes()) {
+                    Log.d(LOG_TAG, "Backdrop Size: " + size);
+                }
 
-            for (String size : configuration.getImages().getProfileSizes()) {
-                Log.d(LOG_TAG, "Profile Size: " + size);
-            }
+                for (String size : configuration.getImages().getLogoSizes()) {
+                    Log.d(LOG_TAG, "Logo Size: " + size);
+                }
 
-            for (String size : configuration.getImages().getStillSizes()) {
-                Log.d(LOG_TAG, "Still Size: " + size);
+                for (String size : configuration.getImages().getProfileSizes()) {
+                    Log.d(LOG_TAG, "Profile Size: " + size);
+                }
+
+                for (String size : configuration.getImages().getStillSizes()) {
+                    Log.d(LOG_TAG, "Still Size: " + size);
+                }
             }
 
             setURIs(configuration, movieList);
@@ -454,36 +354,48 @@ public class MainActivityFragment extends Fragment {
         protected void onPostExecute(List<Movie> movieList) {
             super.onPostExecute(movieList);
 
-            if (movieList != null) {
-                if (mPage == 1) {
-                    mMovieAdapter.clear();
-                }
-                mMovieAdapter.appendItems(movieList);
-            } else {
-                String errorInfo = "Unable to load movies.";
-                Log.e(LOG_TAG, errorInfo);
-
-                Toast.makeText(getActivity(), errorInfo, Toast.LENGTH_LONG)
-                        .show();
-            }
+            addMoviesToGrid(movieList);
         }
     }
 
-    private void setURIs(Configuration configuration, List<Movie> movieList)//, String apiKey)
+    private void addMoviesToGrid(List<Movie> movieList)
+    {
+        if (movieList != null) {
+            if (mPage == 1) {
+                mMovieAdapter.clear();
+            }
+            mMovieAdapter.appendItems(movieList);
+        } else {
+            mMovieAdapter.clear();
+            String errorInfo = "Unable to load movies.";
+            Log.e(LOG_TAG, errorInfo);
+
+            Toast.makeText(getActivity(), errorInfo, Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
+
+    private void setURIs(Configuration configuration, List<Movie> movieList)
     {
         // Set the ImageBaseUri, PosterSize, and BackdropSize for each movie
-        Uri    baseUri      = Uri.parse(configuration.getImages().getBaseUrl());
+        Uri    baseUri      = getBaseUri(configuration);
         String posterSize   = getIdealPosterSize(configuration);
         String backdropSize = getIdealBackdropSize(configuration);
         for (Movie movie : movieList) {
             movie.setImageBaseUri(baseUri);
             movie.setPosterSize(posterSize);
             Log.d(LOG_TAG, "Movie Poster Size: " + movie.getPosterSize());
-            Log.d(LOG_TAG, "Movie Poster URI: " + movie.getPosterUri().toString());
+            Log.d(LOG_TAG, "Movie Poster URI: " + movie.getPosterUriString());
             movie.setBackdropSize(backdropSize);
             Log.d(LOG_TAG, "Movie Backdrop Size: " + movie.getBackdropSize());
-            Log.d(LOG_TAG, "Movie Backdrop URI: " + movie.getBackdropUri().toString());
+            Log.d(LOG_TAG, "Movie Backdrop URI: " + movie.getBackdropUriString());
         }
+    }
+
+    private Uri getBaseUri(Configuration tmdbConfig)
+    {
+        if (tmdbConfig == null) return Uri.EMPTY;
+        return Uri.parse(tmdbConfig.getImages().getBaseUrl());
     }
 
     private int getIdealGridColumnCount()
@@ -498,6 +410,8 @@ public class MainActivityFragment extends Fragment {
 
     private String getIdealPosterSize(Configuration tmdbConfig)
     {
+        if (tmdbConfig == null) return "";
+
         // Get the ideal poster size given the screen width and density,
         // the amount of columns in the grid, and the available poster sizes from TMBd.
         double screenWidthInInches      = mBaseActivity.getScreenWidthInInches();
@@ -509,6 +423,7 @@ public class MainActivityFragment extends Fragment {
 
     private String getIdealBackdropSize(Configuration tmdbConfig)
     {
+        if (tmdbConfig == null) return "";
         // Get the ideal backdrop size given the screen width and density,
         // and the available backdrop sizes from TMBd.
         int screenWidthInPixels = Math.round(mBaseActivity.getDisplayWidthPixels());
@@ -516,29 +431,7 @@ public class MainActivityFragment extends Fragment {
         return tmdbConfig.getImages().getClosestBackdropSize(screenWidthInPixels);
     }
 
-    private <T> T executeCall(Call<T> apiCall)
-    {
-        Response<T> apiResponse;
-        try {
-            apiResponse = apiCall.execute();
-        }
-        catch (IOException ioEx) {
-            Log.e(LOG_TAG, "IOException attempting to execute api call", ioEx);
-            return null;
-        }
-
-        if (!apiResponse.isSuccessful()) {
-            Log.d(LOG_TAG, "api call was unsuccessful");
-            return null;
-        }
-
-        T response = apiResponse.body();
-
-        if (response == null) {
-            Log.d(LOG_TAG, "response from api call is null");
-            return null;
-        }
-
-        return response;
+    public interface OnMovieSelectedListener {
+        void onMovieSelected(Movie movie);
     }
 }

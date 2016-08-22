@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import me.sethallen.popularmovies.utility.UriHelper;
+
 public class Movie implements Parcelable {
 
     private static String LOG_TAG = Movie.class.getSimpleName();
@@ -424,13 +426,35 @@ public class Movie implements Parcelable {
         this.backdropSize = backdropSize;
     }
 
+    public boolean hasPosterUri() {
+        return getImageBaseUri() != null
+                && getImageBaseUri() != Uri.EMPTY;
+    }
+
     /**
      *
      * @return
      * The poster full uri
      */
     public Uri getPosterUri() {
-        return getUri(getImageBaseUri(), getPosterSize(), getPosterPath());//, getAPIKey());
+        return UriHelper.getImageUriOrDefaultDrawable(
+                getUri(getImageBaseUri(), getPosterSize(), getPosterPath()));
+    }
+
+    public String getPosterUriString()
+    {
+        if (hasPosterUri())
+        {
+            return getPosterUri().toString();
+        }
+        else
+        {
+            return "No URI";
+        }
+    }
+
+    public boolean hasBackdropUri() {
+        return getBackdropUri() != null;
     }
 
     /**
@@ -439,7 +463,20 @@ public class Movie implements Parcelable {
      * The backdrop full uri
      */
     public Uri getBackdropUri() {
-        return getUri(getImageBaseUri(), getBackdropSize(), getBackdropPath());
+        return UriHelper.getImageUriOrDefaultDrawable(
+                getUri(getImageBaseUri(), getBackdropSize(), getBackdropPath()));
+    }
+
+    public String getBackdropUriString()
+    {
+        if (hasBackdropUri())
+        {
+            return getBackdropUri().toString();
+        }
+        else
+        {
+            return "No URI";
+        }
     }
 
     public void SetIsFavorite(boolean isFavorite)
@@ -474,7 +511,7 @@ public class Movie implements Parcelable {
         dest.writeByte(video ? (byte) 1 : (byte) 0);
         dest.writeFloat(this.vote_average);
         //dest.writeParcelable(this.additionalProperties, flags);
-        dest.writeString(this.imageBaseUri.toString());
+        dest.writeParcelable(this.imageBaseUri, flags);
         dest.writeString(this.posterSize);
         dest.writeString(this.backdropSize);
         dest.writeByte(this._isFavorite ? (byte) 1 : (byte) 0);
@@ -497,7 +534,7 @@ public class Movie implements Parcelable {
         this.video = in.readByte() != 0;
         this.vote_average = in.readFloat();
         //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
-        this.imageBaseUri = Uri.parse(in.readString());
+        this.imageBaseUri = in.readParcelable(Uri.class.getClassLoader());
         this.posterSize = in.readString();
         this.backdropSize = in.readString();
         this._isFavorite = in.readByte() != 0;
@@ -515,6 +552,16 @@ public class Movie implements Parcelable {
 
     private Uri getUri(Uri baseUri, String size, String uniquePath)
     {
+        // validate the params
+        if (baseUri == null
+                || size == null
+                || size.isEmpty()
+                || uniquePath == null
+                || uniquePath.isEmpty())
+        {
+            return Uri.EMPTY;
+        }
+
         Uri newURi = baseUri.buildUpon()
                 .appendEncodedPath(size + uniquePath)
                 .build();

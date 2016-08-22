@@ -9,7 +9,7 @@
     tools:showIn="@layout/fragment_movie_detail">
     
     <android.support.v7.widget.GridLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:orientation="horizontal"
         app:columnCount="2">
@@ -64,6 +64,58 @@
             android:lineSpacingExtra="@dimen/text_line_spacing"
             android:textColor="@color/movie_overview_color"
             app:layout_columnSpan="2" />
+
+        <android.support.v7.widget.LinearLayoutCompat
+            android:id="@+id/trailers_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_columnSpan="2">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginLeft="@dimen/splitter_margin"
+                android:layout_marginRight="@dimen/splitter_margin"
+                android:background="@color/splitter_bar_color" />
+            <me.sethallen.popularmovies.view.BaselineTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/text_margin"
+                android:textColor="@color/movie_title_color"
+                android:textSize="@dimen/text_size_large"
+                android:textStyle="bold"
+                android:text="@string/movie_detail_trailer_label" />
+            <include layout="@layout/videos_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </android.support.v7.widget.LinearLayoutCompat>
+
+        <android.support.v7.widget.LinearLayoutCompat
+            android:id="@+id/reviews_section"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone"
+            app:layout_columnSpan="2">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginLeft="@dimen/splitter_margin"
+                android:layout_marginRight="@dimen/splitter_margin"
+                android:background="@color/splitter_bar_color" />
+            <me.sethallen.popularmovies.view.BaselineTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/text_margin"
+                android:textColor="@color/movie_title_color"
+                android:textSize="@dimen/text_size_large"
+                android:textStyle="bold"
+                android:text="@string/movie_detail_review_label" />
+            <include layout="@layout/reviews_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </android.support.v7.widget.LinearLayoutCompat>
 
     </android.support.v7.widget.GridLayout>
 

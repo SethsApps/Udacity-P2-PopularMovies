@@ -36,8 +36,6 @@ public class Reviews implements Parcelable, ITMDBResponse<Review> {
     private Integer totalPages;
     @JsonProperty("total_results")
     private Integer totalResults;
-    @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      * No args constructor for use in serialization
@@ -187,21 +185,6 @@ public class Reviews implements Parcelable, ITMDBResponse<Review> {
         return this;
     }
 
-//    @JsonAnyGetter
-//    public Map<String, Object> getAdditionalProperties() {
-//        return this.additionalProperties;
-//    }
-//
-//    @JsonAnySetter
-//    public void setAdditionalProperty(String name, Object value) {
-//        this.additionalProperties.put(name, value);
-//    }
-//
-//    public Reviews withAdditionalProperty(String name, Object value) {
-//        this.additionalProperties.put(name, value);
-//        return this;
-//    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -214,11 +197,6 @@ public class Reviews implements Parcelable, ITMDBResponse<Review> {
         dest.writeList(this.results);
         dest.writeValue(this.totalPages);
         dest.writeValue(this.totalResults);
-//        dest.writeInt(this.additionalProperties.size());
-//        for (Map.Entry<String, Object> entry : this.additionalProperties.entrySet()) {
-//            dest.writeString(entry.getKey());
-//            dest.writeParcelable(entry.getValue(), flags);
-//        }
     }
 
     protected Reviews(Parcel in) {
@@ -228,13 +206,6 @@ public class Reviews implements Parcelable, ITMDBResponse<Review> {
         in.readList(this.results, Review.class.getClassLoader());
         this.totalPages = (Integer) in.readValue(Integer.class.getClassLoader());
         this.totalResults = (Integer) in.readValue(Integer.class.getClassLoader());
-//        int additionalPropertiesSize = in.readInt();
-//        this.additionalProperties = new HashMap<String, Object>(additionalPropertiesSize);
-//        for (int i = 0; i < additionalPropertiesSize; i++) {
-//            String key = in.readString();
-//            Object value = in.readParcelable(Object.class.getClassLoader());
-//            this.additionalProperties.put(key, value);
-//        }
     }
 
     public static final Parcelable.Creator<Reviews> CREATOR = new Parcelable.Creator<Reviews>() {

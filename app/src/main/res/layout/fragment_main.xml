@@ -1,12 +1,17 @@
-<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/fragment_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="4dp"
-    android:scrollbars="vertical"
-    app:layoutManager="GridLayoutManager"
-    tools:context=".fragment.MainActivityFragment"
-    tools:listitem="@layout/card_view_movie"
-    />
+    android:orientation="vertical">
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/movies_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="4dp"
+        android:scrollbars="vertical"
+        app:layoutManager="GridLayoutManager"
+        tools:context=".fragment.MovieListFragment"
+        tools:listitem="@layout/card_view_movie" />
+</LinearLayout>

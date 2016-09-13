@@ -1,5 +1,5 @@
 package me.sethallen.popularmovies.interfaces;
 
 public interface IFavoriteStatusObserver {
-    void favoriteStatusChanged(boolean statusChanged);
+    void favoriteStatusChanged(Integer movieId, boolean statusChanged);
 }

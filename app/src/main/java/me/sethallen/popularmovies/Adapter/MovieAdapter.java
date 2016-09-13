@@ -12,7 +12,7 @@ import java.util.List;
 
 import com.facebook.drawee.view.SimpleDraweeView;
 
-import me.sethallen.popularmovies.fragment.MainActivityFragment;
+import me.sethallen.popularmovies.fragment.MovieListFragment;
 import me.sethallen.popularmovies.model.Movie;
 import me.sethallen.popularmovies.R;
 
@@ -21,13 +21,13 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     private static String LOG_TAG = MovieAdapter.class.getSimpleName();
 
     private ArrayList<Movie> mMovieList;
-    private MainActivityFragment.OnMovieSelectedListener mListener;
+    private MovieListFragment.OnMovieSelectedListener mListener;
 
-    public MovieAdapter(MainActivityFragment.OnMovieSelectedListener listener) {
+    public MovieAdapter(MovieListFragment.OnMovieSelectedListener listener) {
         this(new ArrayList<Movie>(), listener);
     }
 
-    public MovieAdapter(ArrayList<Movie> movieList, MainActivityFragment.OnMovieSelectedListener listener) {
+    public MovieAdapter(ArrayList<Movie> movieList, MovieListFragment.OnMovieSelectedListener listener) {
         this.mMovieList = movieList;
         this.mListener  = listener;
     }

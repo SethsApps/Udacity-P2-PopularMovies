@@ -12,7 +12,6 @@ public class FavoriteMovieProvider extends ContentProvider
     private static final String LOG_TAG             = FavoriteMovieProvider.class.getSimpleName();
     private static final String PROVIDER_NAME       = "me.sethallen.popularmovies.favoritemovieprovider";
     private static final int    FAVORITE_MOVIES     = 100;
-    private static final int    FAVORITE_MOVIE_ITEM = 101;
 
     private static final UriMatcher            _uriMatcher = buildUriMatcher();
     private              FavoriteMovieDbHelper _dbHelper;
@@ -25,11 +24,6 @@ public class FavoriteMovieProvider extends ContentProvider
         matcher.addURI(FavoriteMovieContract.CONTENT_AUTHORITY,
                        FavoriteMovieContract.PATH_FAVORITE_MOVIE,
                        FAVORITE_MOVIES);
-
-        // Movie Item Uri
-        matcher.addURI(FavoriteMovieContract.CONTENT_AUTHORITY,
-                       FavoriteMovieContract.PATH_FAVORITE_MOVIE + "/#",
-                       FAVORITE_MOVIE_ITEM);
 
         return matcher;
     }
@@ -44,17 +38,13 @@ public class FavoriteMovieProvider extends ContentProvider
     @Override
     public String getType(Uri uri)
     {
-
         // Use the Uri Matcher to determine what kind of URI this is.
         final int match = _uriMatcher.match(uri);
 
         switch (match)
         {
-            // Student: Uncomment and fill out these two cases
             case FAVORITE_MOVIES:
                 return FavoriteMovieContract.FavoriteMovieEntry.CONTENT_TYPE;
-            case FAVORITE_MOVIE_ITEM:
-                return FavoriteMovieContract.FavoriteMovieEntry.CONTENT_ITEM_TYPE;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }

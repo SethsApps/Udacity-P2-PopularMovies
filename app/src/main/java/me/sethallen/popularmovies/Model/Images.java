@@ -11,7 +11,6 @@ public class Images implements Parcelable {
     private Integer id;
     private List<Image> backdrops = new ArrayList<>();
     private List<Image> posters   = new ArrayList<>();
-//    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      *
@@ -67,14 +66,6 @@ public class Images implements Parcelable {
         this.posters = posters;
     }
 
-//    public Map<String, Object> getAdditionalProperties() {
-//        return this.additionalProperties;
-//    }
-//
-//    public void setAdditionalProperty(String name, Object value) {
-//        this.additionalProperties.put(name, value);
-//    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -85,7 +76,6 @@ public class Images implements Parcelable {
         dest.writeValue(this.id);
         dest.writeList(this.backdrops);
         dest.writeTypedList(posters);
-        //dest.writeParcelable(this.additionalProperties, flags);
     }
 
     public Images() {
@@ -97,8 +87,6 @@ public class Images implements Parcelable {
         in.readList(this.backdrops, List.class.getClassLoader());
         this.posters = new ArrayList<>();
         in.readList(this.posters, List.class.getClassLoader());
-        //this.posters = in.createT.createTypedArrayList(Poster.CREATOR);
-        //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
     }
 
     public static final Parcelable.Creator<Images> CREATOR = new Parcelable.Creator<Images>() {

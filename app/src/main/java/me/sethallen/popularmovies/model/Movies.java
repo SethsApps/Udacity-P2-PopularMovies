@@ -16,7 +16,6 @@ public class Movies implements Parcelable, ITMDBResponse<Movie> {
     private List<Movie> results = new ArrayList<>();
     private Integer totalResults;
     private Integer totalPages;
-    private Map<String, Object> additionalProperties = new HashMap<>();
 
 
     /**
@@ -113,14 +112,6 @@ public class Movies implements Parcelable, ITMDBResponse<Movie> {
         this.totalPages = totalPages;
     }
 
-//    public Map<String, Object> getAdditionalProperties() {
-//        return this.additionalProperties;
-//    }
-//
-//    public void setAdditionalProperty(String name, Object value) {
-//        this.additionalProperties.put(name, value);
-//    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -132,7 +123,6 @@ public class Movies implements Parcelable, ITMDBResponse<Movie> {
         dest.writeTypedList(results);
         dest.writeInt(this.totalResults);
         dest.writeInt(this.totalPages);
-        //dest.writeParcelable(this.additionalProperties, flags);
     }
 
     protected Movies(Parcel in) {
@@ -140,7 +130,6 @@ public class Movies implements Parcelable, ITMDBResponse<Movie> {
         this.results = in.createTypedArrayList(Movie.CREATOR);
         this.totalResults = in.readInt();
         this.totalPages = in.readInt();
-        //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
     }
 
     public static final Parcelable.Creator<Movies> CREATOR = new Parcelable.Creator<Movies>() {

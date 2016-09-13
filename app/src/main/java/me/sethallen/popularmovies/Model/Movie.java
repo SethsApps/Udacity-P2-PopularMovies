@@ -34,7 +34,6 @@ public class Movie implements Parcelable {
     private int vote_count;
     private boolean video;
     private float vote_average;
-    private Map<String, Object> additionalProperties = new HashMap<>();
 
     private Uri    imageBaseUri;
     private String posterSize;
@@ -354,14 +353,6 @@ public class Movie implements Parcelable {
         this.vote_average = vote_average;
     }
 
-//    public Map<String, Object> getAdditionalProperties() {
-//        return this.additionalProperties;
-//    }
-//
-//    public void setAdditionalProperty(String name, Object value) {
-//        this.additionalProperties.put(name, value);
-//    }
-
     public Date getReleaseDateAsDate()
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -510,7 +501,6 @@ public class Movie implements Parcelable {
         dest.writeInt(this.vote_count);
         dest.writeByte(video ? (byte) 1 : (byte) 0);
         dest.writeFloat(this.vote_average);
-        //dest.writeParcelable(this.additionalProperties, flags);
         dest.writeParcelable(this.imageBaseUri, flags);
         dest.writeString(this.posterSize);
         dest.writeString(this.backdropSize);
@@ -533,7 +523,6 @@ public class Movie implements Parcelable {
         this.vote_count = in.readInt();
         this.video = in.readByte() != 0;
         this.vote_average = in.readFloat();
-        //this.additionalProperties = in.readParcelable(Map<String, Object>.class.getClassLoader());
         this.imageBaseUri = in.readParcelable(Uri.class.getClassLoader());
         this.posterSize = in.readString();
         this.backdropSize = in.readString();

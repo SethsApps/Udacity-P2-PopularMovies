@@ -27,50 +27,30 @@ In order for this app to fetch content using the themoviedb.org API, an API key 
 - ~~UI contains an element (i.e a spinner or settings menu) to toggle the sort order of the movies by: most popular, highest rated~~ ([9df3202](https://git.io/vwBz5)), and favorites
 - ~~UI contains a screen for displaying the details for a selected movie~~ ([a00a495](https://git.io/vwoww))
 - ~~Movie details layout contains title, release date, movie poster, vote average, and plot synopsis.~~ ([a00a495](https://git.io/vwoww))
-- Movie Details layout contains a section for displaying trailer videos and user reviews
-- Tablet UI uses a Master-Detail layout implemented using fragments. The left fragment is for discovering movies. The right fragment displays the movie details view for the currently selected movie.
+- ~~Movie Details layout contains a section for displaying trailer videos and user reviews~~
+- ~~Tablet UI uses a Master-Detail layout implemented using fragments. The left fragment is for discovering movies. The right fragment displays the movie details view for the currently selected movie.~~
 
 ##### User Interface - Function
 - ~~When a user changes the sort criteria (“most popular and highest rated”) the main view gets updated correctly.~~ ([9df3202](https://git.io/vwBz5)), and favorites sort criteria
 - ~~When a movie poster thumbnail is selected, the movie details screen is launched [Phone]~~ ([a00a495](https://git.io/vwoww)) or displayed in a fragment [Tablet]
-- When a trailer is selected, app uses an Intent to launch the trailer
-- In the movies detail screen, a user can tap a button (for example, a star) to mark it as a Favorite
+- ~~When a trailer is selected, app uses an Intent to launch the trailer~~
+- ~~In the movies detail screen, a user can tap a button (for example, a star) to mark it as a Favorite~~
 
 ##### Network API Implementation 
 - ~~In a background thread, app queries the /movie/popular or /movie/top_rated API for the sort criteria specified in the settings menu.~~ ([9df3202](https://git.io/vwBz5))
 - ~~This query can also be used to fetch the related metadata needed for the detail view.~~ ([a00a495](https://git.io/vwoww))
-- App requests for related videos for a selected movie via the /movie/{id}/videos endpoint in a background thread and displays those details when the user selects a movie.
-- App requests for user reviews for a selected movie via the /movie/{id}/reviews endpoint in a background thread and displays those details when the user selects a movie.
+- ~~App requests for related videos for a selected movie via the /movie/{id}/videos endpoint in a background thread and displays those details when the user selects a movie.~~
+- ~~App requests for user reviews for a selected movie via the /movie/{id}/reviews endpoint in a background thread and displays those details when the user selects a movie.~~
 
 ##### Data Persistence 
-- App saves a “Favorited” movie to SharedPreferences or a database using the movie’s id.
-- When the “favorites” setting option is selected, the main view displays the entire favorites collection based on movie IDs stored in SharedPreferences or a database.
+- ~~App saves a “Favorited” movie to SharedPreferences or a database using the movie’s id.~~
+- ~~When the “favorites” setting option is selected, the main view displays the entire favorites collection based on movie IDs stored in SharedPreferences or a database.~~
 
 ##### ContentProvider
-- App persists favorite movie details using a database
-- App displays favorite movie details (title, poster, synopsis, user rating, release date) even when offline
-- App uses a ContentProvider to populate favorite movie details.  Student may use a library to generate a content provider rather than build one by hand
+- A~~pp persists favorite movie details using a database~~
+- ~~App displays favorite movie details (title, poster, synopsis, user rating, release date) even when offline~~
+- ~~App uses a ContentProvider to populate favorite movie details.  Student may use a library to generate a content provider rather than build one by hand~~
 
 ##### Sharing Functionality
-- Movie Details View includes an Action Bar item that allows the user to share the first trailer video URL from the list of trailers
-- App uses a share Intent to expose the external youtube URL for the trailer
-
-## Additional Features
-
-- Endless Scrolling on list of movies in main layout.
-
-## Consider using
-  - [Fresco](http://frescolib.org/) for image loading
-  - [Gson](https://github.com/google/gson) for JSON processing
-  - [OkHttp](http://square.github.io/okhttp/) as HTTP+SPDY Client
-  - [Retrofit](http://square.github.io/retrofit/) as REST client
-  - [Robolectric](https://github.com/robolectric/robolectric) and/or [Robotium](https://code.google.com/p/robotium/) for unit testing
-  - [Xtends](http://futurice.com/blog/android-development-has-its-own-swift)
-  - Automate Content Providers:
-    - [ProviGen](https://github.com/TimotheeJeannin/ProviGen)
-    - [schematic](https://github.com/SimonVT/schematic)
-    - [simple provider](https://github.com/Triple-T/simpleprovider)
-  - ORM instead of SQLite/ContentProvider:
-    - [Realm](https://realm.io/docs/java)
-    - [GreenDAO](http://greendao-orm.com/)
-    - [Sugar ORM](http://satyan.github.io/sugar/index.html)
+- ~~Movie Details View includes an Action Bar item that allows the user to share the first trailer video URL from the list of trailers~~
+- ~~App uses a share Intent to expose the external youtube URL for the trailer~~

@@ -7,9 +7,12 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,7 +25,10 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import me.sethallen.popularmovies.activity.BaseActivity;
+import me.sethallen.popularmovies.activity.MainActivity;
 import me.sethallen.popularmovies.adapter.MovieAdapter;
 import me.sethallen.popularmovies.interfaces.IDisplayItems;
 import me.sethallen.popularmovies.interfaces.IFavoriteStatusObserver;
@@ -35,11 +41,11 @@ import me.sethallen.popularmovies.task.TMDBMovieLoaderTask;
 import me.sethallen.popularmovies.utility.NetworkHelper;
 import me.sethallen.popularmovies.utility.RetrofitHelper;
 
-public class MainActivityFragment extends Fragment
+public class MovieListFragment extends Fragment
         implements IDisplayItems<Movie>,
                    IFavoriteStatusObserver {
 
-    private static String       LOG_TAG                         = MainActivityFragment.class.getSimpleName();
+    private static String       LOG_TAG                         = MovieListFragment.class.getSimpleName();
     private static final String STATE_PAGE                      = "state-page";
     private static final String STATE_QUERY_TYPE                = "state-query-type";
     private static final String STATE_MOVIE_LIST                = "state-movie-list";
@@ -51,17 +57,21 @@ public class MainActivityFragment extends Fragment
     private static final int    SORT_OPTION_INDEX_FAVORITES     = 2;
     private static String[]     mSortDialogItems;
 
+    private boolean                 mDualPane;
+    private int                     mFragmentWidthInPixels;
     private int                     mPage;
     private String                  mQueryType;
     private OnMovieSelectedListener mListener;
     private BaseActivity            mBaseActivity;
     private GridLayoutManager       mGridLayoutManager;
-    private RecyclerView            mMovieRecyclerView;
     private MovieAdapter            mMovieAdapter;
+    private ActionBar               mActionBar;
+    private Toolbar                 mToolbar;
 
-    public MainActivityFragment()
+    @BindView(R.id.movies_recycler_view) RecyclerView mMovieRecyclerView;
+
+    public MovieListFragment()
     {
-        // Required empty public constructor
         mSortDialogItems = new String[3];
         mSortDialogItems[SORT_OPTION_INDEX_MOST_POPULAR]  = "Most Popular";
         mSortDialogItems[SORT_OPTION_INDEX_HIGHEST_RATED] = "Highest Rated";
@@ -70,10 +80,10 @@ public class MainActivityFragment extends Fragment
 
     /**
      * Use this factory method to create a new instance of this fragment.
-     * @return A new instance of fragment MainActivityFragment.
+     * @return A new instance of fragment MovieListFragment.
      */
-    public static MainActivityFragment newInstance() {
-        return new MainActivityFragment();
+    public static MovieListFragment newInstance() {
+        return new MovieListFragment();
     }
 
     @Override
@@ -85,7 +95,6 @@ public class MainActivityFragment extends Fragment
         args.putInt(STATE_PAGE,                mPage);
         args.putString(STATE_QUERY_TYPE,       mQueryType);
         args.putSerializable(STATE_MOVIE_LIST, mMovieAdapter.getMovieList());
-        // TODO: Save scroll position after adding Endless Scrolling in P2
 
         outState.putAll(args);
     }
@@ -96,15 +105,25 @@ public class MainActivityFragment extends Fragment
         setHasOptionsMenu(true);
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_main, container, false);
+        final View view;
 
-        if (view instanceof RecyclerView) {
-            mMovieRecyclerView = (RecyclerView)view;
-        }
+        view = inflater.inflate(R.layout.fragment_main_single_pane, container, false);
+
+        ButterKnife.bind(this, view);
+
+        AppCompatActivity activity = (AppCompatActivity)getActivity();
+        mToolbar = (Toolbar) activity.findViewById(R.id.toolbar);
+        mActionBar = activity.getSupportActionBar();
+
+        view.post(new Runnable() {
+            @Override
+            public void run() {
+                mFragmentWidthInPixels = view.getMeasuredWidth();
+            }
+        });
 
         return view;
     }
@@ -114,12 +133,24 @@ public class MainActivityFragment extends Fragment
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        mDualPane = ((MainActivity) getActivity()).isDualPane();
+
+        if (mActionBar != null)
+        {
+            if (mDualPane) {
+                mActionBar.setDisplayHomeAsUpEnabled(true);
+            } else {
+                mActionBar.setHomeButtonEnabled(false);      // Disable the button
+                mActionBar.setDisplayHomeAsUpEnabled(false); // Remove the left caret
+                mActionBar.setDisplayShowHomeEnabled(false); // Remove the icon
+            }
+        }
+
         ArrayList<Movie> movieList = null;
         if (savedInstanceState != null) {
             mPage      = savedInstanceState.getInt(STATE_PAGE);
             mQueryType = savedInstanceState.getString(STATE_QUERY_TYPE);
             movieList  = (ArrayList<Movie>) savedInstanceState.getSerializable(STATE_MOVIE_LIST);
-            // TODO: Add tracking of scroll position and scrolling back to that position, after adding Endless Scrolling in P2
         } else {
             mPage      = 0;
             mQueryType = TMDB_MOVIE_POPULAR_QUERY_TYPE;
@@ -221,13 +252,22 @@ public class MainActivityFragment extends Fragment
     }
 
     @Override
-    public void favoriteStatusChanged(boolean statusChanged) {
+    public void favoriteStatusChanged(Integer movieId, boolean statusChanged) {
         Log.d(LOG_TAG, "handling favoriteStatusChanged=" + statusChanged);
         // Only reload the movies grid if statusChanged and Favorites are already what are shown.
-        if (statusChanged && mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
+        if (statusChanged)
         {
-            Log.d(LOG_TAG, "calling loadMovies due to favoriteStatusChanged");
-            loadMovies();
+            if (mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE)) {
+                Log.d(LOG_TAG, "calling loadMovies due to favoriteStatusChanged");
+                loadMovies();
+            } else {
+                for (Movie m : mMovieAdapter.getMovieList()) {
+                    if (m.getId() == movieId) {
+                        m.SetIsFavorite(!m.GetIsFavorite());
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -267,8 +307,6 @@ public class MainActivityFragment extends Fragment
     }
 
     private void loadMovies() {
-        // TODO: use this incrementing logic if endless scrolling is added to the app
-        //mPage += 1;
         mPage = 1;
 
         if (mQueryType.equals(TMDB_MOVIE_FAVORITE_QUERY_TYPE))
@@ -400,12 +438,22 @@ public class MainActivityFragment extends Fragment
 
     private int getIdealGridColumnCount()
     {
-        // Get the max posters that will fit across width of screen
-        // and set the column count (Span Count) of grid that amount of posters
-        double screenWidthInInches      = mBaseActivity.getScreenWidthInInches();
-        double preferredPosterWidth     = .75;
-        int    maxPostersForScreenWidth = (int)Math.floor(screenWidthInInches / preferredPosterWidth);
-        return maxPostersForScreenWidth;
+        double preferredPosterWidth = .75;
+        if (mDualPane)
+        {
+            // Get the max posters that will fit across width of the fragment
+            // and set the column count (Span Count) of grid to that amount of posters.
+            int    maxPostersForScreenWidth = (int)Math.floor(mFragmentWidthInPixels / preferredPosterWidth);
+            return Math.max(maxPostersForScreenWidth, 1);
+        }
+        else
+        {
+            // Get the max posters that will fit across width of screen
+            // and set the column count (Span Count) of grid to that amount of posters
+            double screenWidthInInches      = mBaseActivity.getScreenWidthInInches();
+            int    maxPostersForScreenWidth = (int)Math.floor(screenWidthInInches / preferredPosterWidth);
+            return maxPostersForScreenWidth;
+        }
     }
 
     private String getIdealPosterSize(Configuration tmdbConfig)

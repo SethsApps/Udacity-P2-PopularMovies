@@ -30,8 +30,6 @@ public class Review implements Parcelable {
     private String content;
     @JsonProperty("url")
     private String url;
-    @JsonIgnore
-    private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
     /**
      * No args constructor for use in serialization
@@ -154,21 +152,6 @@ public class Review implements Parcelable {
         return this;
     }
 
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-    }
-
-    public Review withAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
-        return this;
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -180,11 +163,6 @@ public class Review implements Parcelable {
         dest.writeString(this.author);
         dest.writeString(this.content);
         dest.writeString(this.url);
-        //dest.writeInt(this.additionalProperties.size());
-//        for (Map.Entry<String, Object> entry : this.additionalProperties.entrySet()) {
-//            dest.writeString(entry.getKey());
-//            dest.writeParcelable(entry.getValue(), flags);
-//        }
     }
 
     protected Review(Parcel in) {
@@ -192,13 +170,6 @@ public class Review implements Parcelable {
         this.author = in.readString();
         this.content = in.readString();
         this.url = in.readString();
-//        int additionalPropertiesSize = in.readInt();
-//        this.additionalProperties = new HashMap<String, Object>(additionalPropertiesSize);
-//        for (int i = 0; i < additionalPropertiesSize; i++) {
-//            String key = in.readString();
-//            Object value = in.readParcelable(Object.class.getClassLoader());
-//            this.additionalProperties.put(key, value);
-//        }
     }
 
     public static final Parcelable.Creator<Review> CREATOR = new Parcelable.Creator<Review>() {

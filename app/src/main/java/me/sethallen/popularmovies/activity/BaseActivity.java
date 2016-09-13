@@ -3,8 +3,7 @@ package me.sethallen.popularmovies.activity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 
-public class BaseActivity
-        extends AppCompatActivity {
+public class BaseActivity extends AppCompatActivity {
 
     public DisplayMetrics getDisplayMetrics()
     {
@@ -53,15 +52,13 @@ public class BaseActivity
 
     public double getScreenHeightInInches()
     {
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        DisplayMetrics metrics = getDisplayMetrics();
         return metrics.heightPixels / metrics.ydpi;
     }
 
     public double getScreenSizeInInches()
     {
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        DisplayMetrics metrics = getDisplayMetrics();
         double x = Math.pow(metrics.widthPixels / metrics.xdpi, 2);
         double y = Math.pow(metrics.heightPixels / metrics.ydpi, 2);
         return Math.sqrt(x + y);

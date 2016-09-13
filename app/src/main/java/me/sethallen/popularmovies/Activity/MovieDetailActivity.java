@@ -25,45 +25,44 @@ public class MovieDetailActivity extends BaseActivity
                    IFavoriteStatusObserver {
 
     private static String LOG_TAG = MovieDetailActivity.class.getSimpleName();
-
+    private Integer                 mMovieId               = -1;
     private boolean                 mFavoriteStatusChanged = false;
 
     @BindView(R.id.fragment_movie_detail_container) FrameLayout mMovieDetailFragmentContainer;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        Bundle args = new Bundle();
+
+        args.putInt(MainActivity.FAVORITE_MOVIE_ID,           mMovieId);
+        args.putBoolean(MainActivity.FAVORITE_STATUS_CHANGED, mFavoriteStatusChanged);
+
+        outState.putAll(args);
+    }
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_movie_detail);
         ButterKnife.bind(this);
-        /**
-        if (getResources().getConfiguration().orientation
-                == Configuration.ORIENTATION_LANDSCAPE) {
-            // If the screen is now in landscape mode, we can show the
-            // dialog in-line with the list so we don't need this activity.
-            finish();
-            return;
-        }
-         */
 
         if (savedInstanceState != null) {
+            mMovieId               = savedInstanceState.getInt(MainActivity.FAVORITE_MOVIE_ID, -1);
+            mFavoriteStatusChanged = savedInstanceState.getBoolean(MainActivity.FAVORITE_STATUS_CHANGED, false);
             return;
         }
 
         if (mMovieDetailFragmentContainer != null) {
             // During initial setup, plug in the details fragment, replacing the mMovieDetailFragmentContainer
             Movie               movie               = getIntent().getParcelableExtra(MainActivity.MOVIE_ARG);
+            mMovieId = movie.getId();
             MovieDetailFragment movieDetailFragment = MovieDetailFragment.newInstance(movie);
             getSupportFragmentManager()
                     .beginTransaction()
                     .add(mMovieDetailFragmentContainer.getId(), movieDetailFragment)
                     .commit();
         }
-    }
-
-    @Override
-    protected void onPause() {
-        Log.d(LOG_TAG, "onPause");
-        setResultAndFinish();
-        super.onPause();
     }
 
     @Override
@@ -88,6 +87,7 @@ public class MovieDetailActivity extends BaseActivity
     {
         Intent resultIntent = new Intent();
         Log.d(LOG_TAG, "Setting favorite status changed to: " + mFavoriteStatusChanged);
+        resultIntent.putExtra(MainActivity.FAVORITE_MOVIE_ID,       mMovieId);
         resultIntent.putExtra(MainActivity.FAVORITE_STATUS_CHANGED, mFavoriteStatusChanged);
         setResult(AppCompatActivity.RESULT_OK, resultIntent);
         finish();
@@ -114,7 +114,7 @@ public class MovieDetailActivity extends BaseActivity
     }
 
     @Override
-    public void favoriteStatusChanged(boolean statusChanged) {
+    public void favoriteStatusChanged(Integer movieId, boolean statusChanged) {
         Log.d(LOG_TAG, "changed status changing from: " + mFavoriteStatusChanged + " to " + statusChanged);
         mFavoriteStatusChanged = statusChanged;
     }

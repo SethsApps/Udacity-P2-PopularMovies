@@ -24,23 +24,21 @@ public class TMDBLoaderTask<TResponse extends ITMDBResponse<TItem>, TItem>
         extends AsyncTask<TMDBLoaderTask.LoaderArgs, Void, List<TItem>> {
 
     private static String               LOG_TAG         = TMDBLoaderTask.class.getSimpleName();
-    private        Fragment             mCaller;
     private        IDisplayItems<TItem> mItemDisplayer;
 
-    public TMDBLoaderTask(Fragment caller, IDisplayItems<TItem> itemDisplayer) {
-        mCaller        = caller;
+    public TMDBLoaderTask(IDisplayItems<TItem> itemDisplayer) {
         mItemDisplayer = itemDisplayer;
     }
 
     @Override
     protected List<TItem> doInBackground(TMDBLoaderTask.LoaderArgs... params) {
 
-        LoaderArgs args   = params[0];
-        String     apiKey = mCaller.getString(R.string.api_key_tmdb);
+        LoaderArgs args = params[0];
 
-        final TheMovieDBService tmdbApi = TheMovieDBService.Factory.create(mCaller.getString(R.string.base_url_tmdb));
+        final TheMovieDBService tmdbApi = TheMovieDBService.Factory.create(args.getTmdbBaseUrl());
 
-        Log.d(LOG_TAG, "attempting to call " + args.getApiMethodName() + "() with key " + apiKey
+        Log.d(LOG_TAG, "attempting to call " + args.getApiMethodName()
+                + "() with key " + args.getTmdbApiKey()
                 + " and IMDB Id " + args.getImdbId());
 
         TResponse response = null;
@@ -48,7 +46,7 @@ public class TMDBLoaderTask<TResponse extends ITMDBResponse<TItem>, TItem>
             Class<?>[] parameterTypes = {String.class, String.class};
             Method method = TheMovieDBService.class.getDeclaredMethod(args.getApiMethodName(), parameterTypes);
             @SuppressWarnings("unchecked")
-            Call<TResponse> apiCall = (Call<TResponse>)method.invoke(tmdbApi, args.getImdbId(), apiKey);
+            Call<TResponse> apiCall = (Call<TResponse>)method.invoke(tmdbApi, args.getImdbId(), args.getTmdbApiKey());
             Response<TResponse> apiCallResponse = apiCall.execute();
             response = RetrofitHelper.HandleCallResponse(apiCallResponse);
         }
@@ -94,9 +92,17 @@ public class TMDBLoaderTask<TResponse extends ITMDBResponse<TItem>, TItem>
 
     public class LoaderArgs
     {
+        private String mTmdbApiKey;
+        private String mTmdbBaseUrl;
         private String mImdbId;
         private String mApiMethodName;
 
+        public String getTmdbApiKey() {
+            return mTmdbApiKey;
+        }
+        public String getTmdbBaseUrl() {
+            return mTmdbBaseUrl;
+        }
         public String getImdbId() {
             return mImdbId;
         }
@@ -104,7 +110,9 @@ public class TMDBLoaderTask<TResponse extends ITMDBResponse<TItem>, TItem>
             return mApiMethodName;
         }
 
-        public LoaderArgs(String imdbId, String apiMethodName) {
+        public LoaderArgs(String tmdbApiKey, String tmdbBaseUrl, String imdbId, String apiMethodName) {
+            this.mTmdbApiKey    = tmdbApiKey;
+            this.mTmdbBaseUrl   = tmdbBaseUrl;
             this.mImdbId        = imdbId;
             this.mApiMethodName = apiMethodName;
         }

@@ -40,6 +40,7 @@ import com.facebook.imagepipeline.request.ImageRequestBuilder;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import me.sethallen.popularmovies.activity.MainActivity;
 import me.sethallen.popularmovies.adapter.ReviewAdapter;
 import me.sethallen.popularmovies.adapter.VideoAdapter;
 import me.sethallen.popularmovies.fresco.ImagePostProcessorForCollapsingToolbarLayoutDynamicTheme;
@@ -67,6 +68,7 @@ public class MovieDetailFragment extends Fragment
     private static final String                   STATE_REVIEW_LIST = "state-review-list";
     private              Movie                    mMovie;
     private              boolean                  mMovieWasFavoriteAlready;
+    private              boolean                  mDualPane;
     private              IFavoriteStatusObserver  mFavoriteStatusObserver;
     private              OnVideoSelectedListener  mVideoClickListener = null;
     private              GridLayoutManager        mVideoGridLayoutManager;
@@ -78,11 +80,11 @@ public class MovieDetailFragment extends Fragment
     private              ReviewDisplayer          mReviewDisplayer;
     private              MenuItem                 mShareMenuItem;
     private              ShareActionProvider      mShareActionProvider;
+    private              CoordinatorLayout        mCoordinatorLayout;
+    private              CollapsingToolbarLayout  mCollapsingToolbar;
+    private              Toolbar                  mToolbar;
 
-    @BindView(R.id.coordinator_layout)                  CoordinatorLayout       mCoordinatorLayout;
     @BindView(R.id.fab_favorite)                        FloatingActionButton    mFabFavorite;
-    @BindView(R.id.collapsing_toolbar)                  CollapsingToolbarLayout mCollapsingToolbar;
-    @BindView(R.id.toolbar)                             Toolbar                 mToolbar;
     @BindView(R.id.backdrop_image_view)                 WrapContentDraweeView   mBackdropImage;
     @BindView(R.id.card_view_movie_poster)              WrapContentDraweeView   mPosterImage;
     @BindView(R.id.content_movie_detail_title)          TextView                mMovieTitle;
@@ -121,7 +123,12 @@ public class MovieDetailFragment extends Fragment
 
         args.putParcelable(STATE_MOVIE,                   mMovie);
         args.putBoolean(STATE_MOVIE_WAS_FAVORITE_ALREADY, mMovieWasFavoriteAlready);
-        args.putSerializable(STATE_VIDEO_LIST,            mVideoAdapter.getVideoList());
+        if (mVideoAdapter != null) {
+            args.putSerializable(STATE_VIDEO_LIST, mVideoAdapter.getVideoList());
+        }
+        if (mReviewAdapter != null) {
+            args.putSerializable(STATE_REVIEW_LIST, mReviewAdapter.getReviewList());
+        }
 
         outState.putAll(args);
     }
@@ -136,26 +143,51 @@ public class MovieDetailFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState)
     {
-        View v = inflater.inflate(R.layout.fragment_movie_detail, container, false);
-        ButterKnife.bind(this, v);
+        final View view;
 
-        AppCompatActivity activity = (AppCompatActivity)getActivity();
-        activity.setSupportActionBar(mToolbar);
-
-        ActionBar actionBar = activity.getSupportActionBar();
-        if (actionBar != null)
-        {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setDisplayShowTitleEnabled(false);
+        AppCompatActivity activity = ((AppCompatActivity)getActivity());
+        if (activity instanceof MainActivity) {
+            mDualPane = ((MainActivity)activity).isDualPane();
+        } else {
+            mDualPane = false;
         }
 
-        if (getArguments() == null)
+        if (mDualPane)
         {
-            return v;
+            view = inflater.inflate(R.layout.fragment_movie_detail_dual_pane, container, false);
+
+            mCoordinatorLayout = (CoordinatorLayout) view.findViewById(R.id.coordinator_layout);
         }
         else
         {
-            mMovie                   = getArguments().getParcelable(STATE_MOVIE);
+            view = inflater.inflate(R.layout.fragment_movie_detail_single_pane, container, false);
+
+            mCoordinatorLayout = (CoordinatorLayout) view.findViewById(R.id.coordinator_layout);
+            mCollapsingToolbar = (CollapsingToolbarLayout) view.findViewById(R.id.collapsing_toolbar);
+            mToolbar           = (Toolbar) view.findViewById(R.id.toolbar);
+            activity.setSupportActionBar(mToolbar);
+
+            ActionBar actionBar = activity.getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setHomeButtonEnabled(true);        // Enable the button
+                actionBar.setDisplayHomeAsUpEnabled(true);   // Add the left caret
+                actionBar.setDisplayShowHomeEnabled(true);   // Add the icon
+                actionBar.setDisplayShowTitleEnabled(false); // Disable Title
+            }
+        }
+        ButterKnife.bind(this, view);
+
+        if (getArguments() == null)
+        {
+            return view;
+        }
+        else
+        {
+            mMovie = getArguments().getParcelable(STATE_MOVIE);
+            if (mMovie == null)
+            {
+                return view;
+            }
             mMovieWasFavoriteAlready = mMovie.GetIsFavorite();
         }
 
@@ -175,21 +207,28 @@ public class MovieDetailFragment extends Fragment
         Log.d(LOG_TAG, "Backdrop Uri: " + mMovie.getBackdropUriString());
 
         Log.d(LOG_TAG, "Attempting to set Backdrop ImageView with Backdrop Path: " + mMovie.getBackdropPath());
-        // Build an ImageRequest using the customer PostProcessor that
-        // dynamically themes the CollapsingToolBarLayout so the theme will be based
-        // on colors from the Backdrop image.
-        ImageRequest request = ImageRequestBuilder.newBuilderWithSource(mMovie.getBackdropUri())
-                .setPostprocessor(new ImagePostProcessorForCollapsingToolbarLayoutDynamicTheme(mCollapsingToolbar))
-                .build();
-        // Create the drawee controller that uses the customer ImageRequest from above to
-        // load the BackdropImage and apply the dynamic themeing to the toolbar layout based on the image.
-        PipelineDraweeController controller = (PipelineDraweeController)
-                Fresco.newDraweeControllerBuilder()
-                .setImageRequest(request)
-                .setOldController(mBackdropImage.getController())
-                .build();
-        // Set the controller, which causes the image to be loaded and the layout to be themed.
-        mBackdropImage.setController(controller);
+        if (mDualPane)
+        {
+            mBackdropImage.setImageURI(mMovie.getBackdropUri());
+        }
+        else
+        {
+            // Build an ImageRequest using the customer PostProcessor that
+            // dynamically themes the CollapsingToolBarLayout so the theme will be based
+            // on colors from the Backdrop image.
+            ImageRequest request = ImageRequestBuilder.newBuilderWithSource(mMovie.getBackdropUri())
+                    .setPostprocessor(new ImagePostProcessorForCollapsingToolbarLayoutDynamicTheme(mCollapsingToolbar))
+                    .build();
+            // Create the drawee controller that uses the customer ImageRequest from above to
+            // load the BackdropImage and apply the dynamic themeing to the toolbar layout based on the image.
+            PipelineDraweeController controller = (PipelineDraweeController)
+                    Fresco.newDraweeControllerBuilder()
+                            .setImageRequest(request)
+                            .setOldController(mBackdropImage.getController())
+                            .build();
+            // Set the controller, which causes the image to be loaded and the layout to be themed.
+            mBackdropImage.setController(controller);
+        }
 
         Log.d(LOG_TAG, "Attempting to set Poster ImageView with Poster Path: " + mMovie.getPosterPath());
         mPosterImage.setImageURI(mMovie.getPosterUri());
@@ -205,7 +244,7 @@ public class MovieDetailFragment extends Fragment
 
         mMovieOverview.setText(mMovie.getOverview());
 
-        return v;
+        return view;
     }
 
     @Override
@@ -258,10 +297,17 @@ public class MovieDetailFragment extends Fragment
             mMovie                   = savedInstanceState.getParcelable(STATE_MOVIE);
             mMovieWasFavoriteAlready = savedInstanceState.getBoolean(STATE_MOVIE_WAS_FAVORITE_ALREADY);
             List<Video> videoList    = (ArrayList<Video>) savedInstanceState.getSerializable(STATE_VIDEO_LIST);
+            if (videoList == null || videoList.isEmpty()) {
+                loadVideos();
+            } else {
+                appendVideos(videoList);
+            }
             List<Review> reviewList  = (ArrayList<Review>) savedInstanceState.getSerializable(STATE_REVIEW_LIST);
-
-            appendVideos(videoList);
-            appendReviews(reviewList);
+            if (reviewList == null || reviewList.isEmpty()) {
+                loadReviews();
+            } else {
+                appendReviews(reviewList);
+            }
         }
         else {
             loadVideos();
@@ -298,9 +344,8 @@ public class MovieDetailFragment extends Fragment
     @Override
     public void onDetach() {
         super.onDetach();
-        mVideoClickListener     = null;
-        mReviewClickListener    = null;
-        mFavoriteStatusObserver = null;
+        mShareMenuItem       = null;
+        mShareActionProvider = null;
     }
 
     @Override
@@ -319,7 +364,10 @@ public class MovieDetailFragment extends Fragment
                 + mMovieWasFavoriteAlready
                 + " status="
                 + mMovie.GetIsFavorite());
-        mFavoriteStatusObserver.favoriteStatusChanged(mMovieWasFavoriteAlready != mMovie.GetIsFavorite());
+        mFavoriteStatusObserver.favoriteStatusChanged(
+                mMovie.getId(),
+                mMovieWasFavoriteAlready != mMovie.GetIsFavorite());
+        mMovieWasFavoriteAlready = mMovie.GetIsFavorite();
 
         setFavoriteButtonDrawable();
 
@@ -352,9 +400,12 @@ public class MovieDetailFragment extends Fragment
         int retryCount = 0;
         do {
             try {
-                TMDBLoaderTask<Videos, Video> videoLoaderTask = new TMDBLoaderTask<>(this, mVideoDisplayer);
-                TMDBLoaderTask.LoaderArgs args = videoLoaderTask.new LoaderArgs(String.valueOf(mMovie.getId()),
-                                                                                 "getVideos");
+                TMDBLoaderTask<Videos, Video> videoLoaderTask = new TMDBLoaderTask<>(mVideoDisplayer);
+                TMDBLoaderTask.LoaderArgs args = videoLoaderTask.new LoaderArgs(
+                        getString(R.string.api_key_tmdb),
+                        getString(R.string.base_url_tmdb),
+                        String.valueOf(mMovie.getId()),
+                        "getVideos");
 
                 videoLoaderTask.execute(args);
                 break;
@@ -370,9 +421,13 @@ public class MovieDetailFragment extends Fragment
         int retryCount = 0;
         do {
             try {
-                TMDBLoaderTask<Reviews, Review> reviewLoaderTask = new TMDBLoaderTask<>(this, mReviewDisplayer);
-                TMDBLoaderTask.LoaderArgs args = reviewLoaderTask.new LoaderArgs(String.valueOf(mMovie.getId()),
-                                                                                 "getReviews");
+                TMDBLoaderTask<Reviews, Review> reviewLoaderTask = new TMDBLoaderTask<>(mReviewDisplayer);
+                TMDBLoaderTask.LoaderArgs args = reviewLoaderTask.new LoaderArgs(
+                        getString(R.string.api_key_tmdb),
+                        getString(R.string.base_url_tmdb),
+                        String.valueOf(mMovie.getId()),
+                        "getReviews");
+
                 reviewLoaderTask.execute(args);
                 break;
             }
@@ -498,5 +553,11 @@ public class MovieDetailFragment extends Fragment
 
     public interface OnReviewSelectedListener {
         void onReviewSelected(Review review);
+    }
+
+    public int getMovieId()
+    {
+        if (mMovie == null) return -1;
+        return mMovie.getId();
     }
 }

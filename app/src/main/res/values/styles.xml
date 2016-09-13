@@ -2,12 +2,14 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme.Base" parent="Theme.AppCompat.NoActionBar">
-        <!--
+
+        <!-- colorPrimary is used for the default action bar background -->
         <item name="colorPrimary">@color/colorPrimary</item>
+        <!-- colorPrimaryDark is used for the status bar -->
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <!-- colorAccent is used as the default value for colorControlActivated
+             which is used to tint widgets -->
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:colorBackground">@android:color/white</item>
-        -->
         <item name="android:colorBackground">@android:color/background_light</item>
     </style>
 
